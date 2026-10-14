@@ -10,3 +10,5 @@ __pycache__/
 .superpowers/
 .generated/
 *.egg-info/
+apps/desktop/src-tauri/gen/
+.ruff_cache/

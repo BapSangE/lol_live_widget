@@ -70,6 +70,20 @@
     "sourceRevision": 11
   },
   {
+    "id": "47ddaa2f73b91509e542965329ee7f0a2f314cd584f23e6a496e7a753bf07770",
+    "matchId": "demo-worlds",
+    "gameId": "demo-game-4",
+    "type": "MULTIKILL_WINDOW",
+    "gameTimeSeconds": 1552,
+    "occurredAt": null,
+    "observedAt": "2026-10-14T00:00:00Z",
+    "teamId": null,
+    "priority": "important",
+    "messageKo": "관측 구간 T1 1킬·GEN 1킬 기록",
+    "confidence": "derived",
+    "sourceRevision": 11
+  },
+  {
     "id": "b83e02ca0511ec4bbb3363e1ca4dcb46dea1b44bac1c7b397764b14e78360622",
     "matchId": "demo-worlds",
     "gameId": "demo-game-4",

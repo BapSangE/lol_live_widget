@@ -15,3 +15,31 @@
 - Rust SDK diagnosis: installed macOS27 SDK incompatible with current linker; SDKROOT=MacOSX15.4.sdk compiles and Rust tests pass 3/3. No system SDK changes.
 - Desktop production bundle built; browser compact/expanded rendered with DEMO label.
 - Ruling: Native backend opt-in, CSS default until Windows spike evidence; avoids treating platform compatibility as proven.
+
+## Final review and verification
+
+- Fresh reviewer: no Critical findings, five Important findings. All five reproduced with regression tests and fixed:
+  - independent 60-second discovery / next live match switching;
+  - observation chronology retains new-game events when prior history fills capacity;
+  - first native alpha failure retains CSS opacity until native handoff succeeds;
+  - ended summary keeps polling until terminal frame ingestion;
+  - epoch replacement clears old pagination cursor.
+- Additional RED→GREEN: reconnect permits new live ticker events; unknown settings version resets safely; rolling 20-second kills span adjacent frames; null correction breaks counter continuity.
+- Pagination test fixture changed to a >20-second gap to avoid newly required aggregate events while independently testing cursor order.
+- Final: minor (deferred): provider-specific health last_error is not assigned on all failures; authoritative top-level health/sourceError still reports the collector error.
+- Final: minor (deferred): previous-history button can remain visible after cursor exhaustion and repeat an empty page.
+- Latest local verification: server 20/20; desktop 15/15; Rust 3/3; TypeScript check and production Vite build pass.
+- Expected failure-path console messages occur in client tests. Server suite emits one upstream Starlette/httpx deprecation warning, not a test failure.
+- Actual local HTTP: matches and /sync returned valid replay JSON; SSE emitted state with epoch cursor. Intentional two-second stream sampling ended with curl timeout 28 because stream stays open.
+- Ruling: Keep feature branch unmerged and unpublished. Implementation authorization does not require remote publishing; cost: user still needs to choose integration/deployment.
+- Ruling: Two low-impact review notes deferred as above. Cost: provider sub-health may be optimistic, and exhausted history button can perform redundant reads.
+
+## Status
+
+- Foundations, offline UI, collector, detector, REST/SSE integration: implemented and locally verified.
+- Windows commands, tray, atomic settings, geometry, installer configuration and Windows CI: implemented; host Rust compilation/unit tests pass. Windows build/runtime/installer/hardware checks remain unexecuted.
+- Phase 0 Windows screenshot/alpha choice evidence: pending Windows hardware/VM.
+- Actual live API validation, credentials/rights, official-match comparison and public release: pending; live mode fails closed without approval/key.
+- CI workflow is prepared but not dispatched; no Windows installer artifact has been produced in this session.
+
+- Code formatting normalized with Prettier/Ruff; Ruff check passes. Broad collector catches are intentional provider-boundary isolation.

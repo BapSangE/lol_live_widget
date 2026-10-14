@@ -1,16 +1,34 @@
 from __future__ import annotations
-from datetime import datetime, timezone
+
+from datetime import UTC, datetime
 from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.alias_generators import to_camel
 
-EventType = Literal["KILL_DELTA", "MULTIKILL_WINDOW", "DRAGON", "BARON", "ELDER", "DRAGON_SOUL", "TOWER", "GOLD_LEAD_CHANGE", "GAME_END"]
+EventType = Literal[
+    "KILL_DELTA",
+    "MULTIKILL_WINDOW",
+    "DRAGON",
+    "BARON",
+    "ELDER",
+    "DRAGON_SOUL",
+    "TOWER",
+    "GOLD_LEAD_CHANGE",
+    "GAME_END",
+]
 MatchStatus = Literal["scheduled", "live", "ended", "unknown"]
+
+
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
+
 
 class Contract(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid", frozen=True)
+    model_config = ConfigDict(
+        alias_generator=to_camel, populate_by_name=True, extra="forbid", frozen=True
+    )
+
 
 class TeamState(Contract):
     id: str
@@ -23,6 +41,7 @@ class TeamState(Contract):
     dragons: int | None = Field(default=None, ge=0)
     barons: int | None = Field(default=None, ge=0)
 
+
 class MatchSummary(Contract):
     match_id: str
     league: str = "worlds"
@@ -32,6 +51,7 @@ class MatchSummary(Contract):
     game_id: str | None = None
     game_number: int | None = None
     scheduled_at: datetime | None = None
+
 
 class RawFrame(Contract):
     match_id: str
@@ -52,7 +72,8 @@ class RawFrame(Contract):
     def aware(cls, value: datetime) -> datetime:
         if value.tzinfo is None:
             raise ValueError("source timestamp must include timezone")
-        return value.astimezone(timezone.utc)
+        return value.astimezone(UTC)
+
 
 class MatchState(Contract):
     match_id: str
@@ -69,6 +90,7 @@ class MatchState(Contract):
     revision: int = Field(ge=0)
     source_error: str | None = None
 
+
 class MatchEvent(Contract):
     id: str
     match_id: str
@@ -83,11 +105,13 @@ class MatchEvent(Contract):
     confidence: Literal["confirmed", "derived"]
     source_revision: int
 
+
 class SyncSnapshot(Contract):
     state: MatchState
     events: list[MatchEvent]
     stream_cursor: str
     source_mode: Literal["live", "replay"]
+
 
 class EventsPage(Contract):
     items: list[MatchEvent]
