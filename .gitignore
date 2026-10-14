@@ -1,0 +1,12 @@
+node_modules/
+dist/
+target/
+.venv*/
+.tools/
+__pycache__/
+.pytest_cache/
+.env
+*.log
+.superpowers/
+.generated/
+*.egg-info/
