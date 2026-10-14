@@ -1,0 +1,24 @@
+[
+  {
+    "sourceTimestamp": "2026-09-13T05:45:21.293Z",
+    "player": "HLE Kanavi",
+    "champion": "Naafiri",
+    "killDelta": 1,
+    "kda": [
+      2,
+      1,
+      2
+    ]
+  },
+  {
+    "sourceTimestamp": "2026-09-13T05:45:28.535Z",
+    "player": "GEN Duro",
+    "champion": "Milio",
+    "killDelta": 1,
+    "kda": [
+      1,
+      1,
+      3
+    ]
+  }
+]

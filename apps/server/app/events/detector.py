@@ -21,6 +21,9 @@ class Detector:
     def process(self, frame: RawFrame, revision: int) -> list[MatchEvent]:
         game = frame.game_id
         previous = self.previous.get(game)
+        if previous and frame == previous:
+            # Exact retransmissions are not corrections: preserve pending windows.
+            return []
         if previous and frame.source_timestamp < previous.source_timestamp:
             return []
         if previous and frame.source_timestamp == previous.source_timestamp:

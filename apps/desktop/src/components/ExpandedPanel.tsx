@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { useWidgetStore } from '../state/widgetStore';
 import { formatTime, stat } from '../lib/policies';
 import type { MatchEvent, MatchState, MatchSummary } from '../types/contracts';
 const names: Record<string, string> = {
@@ -17,6 +18,7 @@ interface Props {
   events: MatchEvent[];
   status: string;
   replay: boolean;
+  playback?: ReturnType<typeof useWidgetStore.getState>['playback'];
   matches: MatchSummary[];
   onCollapse: () => void;
   onSettings: () => void;
@@ -28,6 +30,7 @@ export function ExpandedPanel({
   events,
   status,
   replay,
+  playback,
   matches,
   onCollapse,
   onSettings,
@@ -38,6 +41,8 @@ export function ExpandedPanel({
     atTop = useRef(true);
   const last = useRef('');
   const [newCount, setNewCount] = useState(0);
+  const [statsCollapsed, setStatsCollapsed] = useState(false);
+  const statsId = useId();
   useEffect(() => {
     if (events[0]?.id !== last.current && !atTop.current) setNewCount((n) => n + 1);
     last.current = events[0]?.id || '';
@@ -53,7 +58,10 @@ export function ExpandedPanel({
     <section className="panel expanded">
       <header className="panel-header">
         <span className="brand">
-          <span className="brand-icon">L</span> LoL LIVE <span className="league">WORLDS</span>
+          <span className="brand-icon">L</span> LoL LIVE{' '}
+          <span className="league">
+            {(state?.league || matches[0]?.league || 'worlds').toUpperCase()}
+          </span>
         </span>
         <div className="header-actions">
           <button title="설정" aria-label="설정 열기" onClick={onSettings}>
@@ -74,9 +82,15 @@ export function ExpandedPanel({
                 : '경기 대기'}
           </span>
           <span className={`connection ${state?.connection || 'offline'}`}>
-            {replay ? '모의 데이터' : status}
+            {replay && !playback ? '모의 데이터' : status}
           </span>
         </div>
+        {playback && (
+          <p className="unsupported">
+            실제 경기 구간 · 재생 {formatTime(Math.floor(playback.elapsedSeconds))} /{' '}
+            {formatTime(Math.ceil(playback.durationSeconds))} · 게임 시계 미지원
+          </p>
+        )}
         {state ? (
           <>
             <div className="match-heading">
@@ -88,29 +102,39 @@ export function ExpandedPanel({
               </span>
               <strong>{state.red.shortName}</strong>
             </div>
-            <div className="stat-table">
+            <div className={`stat-table${statsCollapsed ? ' collapsed' : ''}`}>
               <div className="stat-row stat-label">
                 <span>{state.blue.shortName}</span>
-                <span>현재 게임</span>
+                <button
+                  className="stat-toggle"
+                  aria-label={statsCollapsed ? '경기 통계 펼치기' : '경기 통계 최소화'}
+                  aria-expanded={!statsCollapsed}
+                  aria-controls={statsId}
+                  onClick={() => setStatsCollapsed((collapsed) => !collapsed)}
+                >
+                  현재 게임 <span aria-hidden="true">{statsCollapsed ? '+' : '−'}</span>
+                </button>
                 <span>{state.red.shortName}</span>
               </div>
-              {(
-                [
-                  ['킬', 'kills'],
-                  ['골드', 'gold'],
-                  ['타워', 'towers'],
-                  ['드래곤', 'dragons'],
-                  ['바론', 'barons'],
-                ] as const
-              ).map(([label, key]) => (
-                <div className="stat-row" key={key}>
-                  <strong>{stat(state.blue[key])}</strong>
-                  <span>{label}</span>
-                  <strong>{stat(state.red[key])}</strong>
-                </div>
-              ))}
+              <div id={statsId} hidden={statsCollapsed}>
+                {(
+                  [
+                    ['킬', 'kills'],
+                    ['골드', 'gold'],
+                    ['타워', 'towers'],
+                    ['드래곤', 'dragons'],
+                    ['바론', 'barons'],
+                  ] as const
+                ).map(([label, key]) => (
+                  <div className="stat-row" key={key}>
+                    <strong>{stat(state.blue[key])}</strong>
+                    <span>{label}</span>
+                    <strong>{stat(state.red[key])}</strong>
+                  </div>
+                ))}
+                {unsupported && <p className="unsupported">— 통계 미지원</p>}
+              </div>
             </div>
-            {unsupported && <p className="unsupported">— 통계 미지원</p>}
           </>
         ) : (
           <div className="empty-panel">

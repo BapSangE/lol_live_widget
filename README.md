@@ -84,3 +84,17 @@ Windows에서 `npm --prefix apps/desktop run tauri -- build`를 실행합니다.
 - 공급원 adapter는 아직 실제 응답 검증을 받지 않았습니다. 응답 필드가 없으면 `null`로 표시합니다.
 
 [구현 명세](docs/implementation_spec.md) · [API 계약](docs/api_contract.md) · [수용 테스트](docs/test_plan.md) · [기술 결정](docs/decisions/001-alpha-and-replay.md) · [검증 기록](docs/progress.md)
+
+### 다운로드한 2026 LCK 경기로 테스트
+
+macOS에서는 저장소의 `LCK 리플레이 실행.command`를 더블 클릭하거나 아래 명령을 실행합니다. 현재 작업 공간에 설치된 Python/Node를 사용합니다.
+
+```sh
+.venv312/bin/python scripts/run_lck_replay.py
+```
+
+브라우저에서 http://127.0.0.1:1420 을 열고 위젯을 클릭해 펼치면 LCK / GEN–HLE 1세트가 표시됩니다. 실행 시점부터 약 69초 동안 원래 시간 간격으로 재생합니다. 킬은 3:3에서 4:4로 바뀌고 관련 기록이 나타납니다. 종료 후 마지막 통계를 유지하며 `재생 구간 종료`를 표시합니다. 다시 처음부터 보려면 실행한 터미널에서 Ctrl+C를 누른 뒤 같은 명령을 다시 실행합니다. 브라우저만 새로고침하면 서버의 현재 재생 위치에 연결됩니다.
+
+실제 다운로드한 원본 및 정규화 데이터는 `fixtures/captures/lck-2026-09-13-gen-hle-game1/`에 있습니다. 2026-09-13 경기의 약 70초 샘플이며 전체 경기 녹화가 아닙니다. 게임 시계는 원본에서 제공하지 않아 `--:--`로 표시합니다. 화면의 ‘재생’ 시간은 샘플 내 경과 시간입니다. 원본 다운로드 후 재생 중에는 외부 데이터 요청이나 API 키가 필요하지 않습니다.
+
+이 실행 명령은 **과거 경기 재생 전용**입니다. 실제 경기가 시작해도 새 경기로 자동 전환하지 않습니다. 라이브는 서버의 `SOURCE_MODE=live`, 공급자 접근 설정(`SOURCE_APPROVED=true`, `LOLESPORTS_API_KEY`), 위젯의 `VITE_SERVER_URL`과 지원하는 리그 설정을 별도로 준비해야 합니다. 현재 라이브 공급자는 Worlds 검색에 맞춰져 있으며, LCK 자동 탐색과 실제 라이브 연결은 추가 구현 및 검증이 필요합니다. API 키 없이 과거 feed를 읽은 결과는 라이브 경기 자동 탐색이 검증됐다는 의미가 아닙니다.

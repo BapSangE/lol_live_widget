@@ -252,6 +252,7 @@ button:hover {
   padding: 0 10px;
 }
 .stat-table {
+  flex-shrink: 0;
   padding: 5px 8px;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -281,12 +282,33 @@ button:hover {
   font-size: 9px;
   color: var(--muted);
 }
+.stat-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 3px;
+  color: var(--muted);
+  padding: 0 3px;
+  line-height: 18px;
+  font-size: 10px;
+}
+.stat-toggle > span {
+  color: var(--text);
+  font-size: 16px;
+}
+.stat-table.collapsed .stat-label {
+  border-bottom: 0;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
 .log-heading {
   display: flex;
   justify-content: space-between;
   margin-top: 9px;
   padding-bottom: 5px;
-  font-size: 10px;
+  flex-shrink: 0;
+  font-size: 12px;
 }
 .log-heading > span:last-child {
   color: var(--muted);
@@ -302,27 +324,29 @@ button:hover {
 .log-row {
   display: flex;
   gap: 8px;
-  padding: 6px 0;
+  padding: 8px 0;
   border-top: 1px solid var(--line);
-  font-size: 10px;
+  font-size: 13px;
   overflow-anchor: auto;
 }
 .log-row time {
-  font-size: 9px;
+  flex-shrink: 0;
+  font-size: 11px;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
-  line-height: 15px;
+  line-height: 19px;
 }
 .log-row div {
   min-width: 0;
 }
 .log-row p {
   margin: 2px 0 0;
-  line-height: 15px;
+  line-height: 19px;
+  overflow-wrap: anywhere;
 }
 .event-type {
   color: #168f6c;
-  font-size: 8px;
+  font-size: 11px;
   font-weight: 600;
 }
 .log-row.normal .event-type {
