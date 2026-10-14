@@ -43,3 +43,13 @@
 - CI workflow is prepared but not dispatched; no Windows installer artifact has been produced in this session.
 
 - Code formatting normalized with Prettier/Ruff; Ruff check passes. Broad collector catches are intentional provider-boundary isolation.
+
+## 2026 LCK capture validation
+
+- Selected 2026-09-13 LCK final GEN–HLE game1 from public official schedule HTML; no web-app code execution or key extraction.
+- Archived 7 contiguous windows (~69.263s, 363 raw frames / 333 unique / 30 identical duplicates), matching kill details, and independent terminal snapshot with SHA-256 provenance.
+- Actual observed scorers: HLE Kanavi (Naafiri) +1, GEN Duro (Milio) +1. Cross-feed K/D/A matches.
+- RED: direct detector omitted MULTIKILL_WINDOW because duplicate frames cleared its pending window. GREEN: exact duplicate returns without correction handling; capture regression passes.
+- Ruling: Test only the acquired ~70-second sample and separate final snapshot. Do not call this full-game, live, or desktop playback verification; cost: those need further coverage.
+- Fixture characterization: revision counts unique accepted frames (333), not raw transport frames (363). SSE test consumes response.read() before inspecting content.
+- Server verification updated to 27/27; source capture report is docs/lck_2026_capture_test.md.

@@ -1,0 +1,81 @@
+{
+  "matchId": "117030752644841643",
+  "gameId": "117030752644841644",
+  "gameNumber": 1,
+  "league": "lck",
+  "matchDate": "2026-09-13",
+  "teams": [
+    "Gen.G Esports",
+    "Hanwha Life Esports"
+  ],
+  "sourcePage": "https://lolesports.com/en-GB/schedule?leagues=lck",
+  "capturedAt": "2026-10-14T06:21:34.915986+00:00",
+  "frameCount": 363,
+  "firstSourceTimestamp": "2026-09-13T05:45:00.550Z",
+  "lastSourceTimestamp": "2026-09-13T05:46:09.813Z",
+  "coverage": "Contiguous ~70-second in-game sample; terminal snapshot stored separately. Not a full-game recording.",
+  "credentialsUsed": false,
+  "requests": [
+    {
+      "file": "window-05-45-00.json",
+      "url": "https://feed.lolesports.com/livestats/v1/window/117030752644841644?startingTime=2026-09-13T05:45:00.000Z",
+      "httpStatus": 200,
+      "sha256": "ff530a4adf044c7095496fe87635a898e870121a7973832dcfaa3016fb029eed"
+    },
+    {
+      "file": "window-05-45-10.json",
+      "url": "https://feed.lolesports.com/livestats/v1/window/117030752644841644?startingTime=2026-09-13T05:45:10.000Z",
+      "httpStatus": 200,
+      "sha256": "c008519dd1a3b6228629d3dd12cb7315189f4ae8a11b0c337c48ae7bd20532d8"
+    },
+    {
+      "file": "window-05-45-20.json",
+      "url": "https://feed.lolesports.com/livestats/v1/window/117030752644841644?startingTime=2026-09-13T05:45:20.000Z",
+      "httpStatus": 200,
+      "sha256": "5dbdbb0b9a3124a6a461675fcd2b991dc5d8fa0fc7a058371fc7d76fe40286d1"
+    },
+    {
+      "file": "window-05-45-30.json",
+      "url": "https://feed.lolesports.com/livestats/v1/window/117030752644841644?startingTime=2026-09-13T05:45:30.000Z",
+      "httpStatus": 200,
+      "sha256": "bb49694988c8492cbe84bd730aec9191f04b4f6d252b59384a7eef01bac3ceac"
+    },
+    {
+      "file": "window-05-45-40.json",
+      "url": "https://feed.lolesports.com/livestats/v1/window/117030752644841644?startingTime=2026-09-13T05:45:40.000Z",
+      "httpStatus": 200,
+      "sha256": "93f32c44398f0f54002a37735ecffab6f0c765de22bdf6f1e4a0ca134fc62816"
+    },
+    {
+      "file": "window-05-45-50.json",
+      "url": "https://feed.lolesports.com/livestats/v1/window/117030752644841644?startingTime=2026-09-13T05:45:50.000Z",
+      "httpStatus": 200,
+      "sha256": "d7fe6f6f69724b505081c0729cec0eb5f88430f94f1ef9f5b17bd8f88d25b26f"
+    },
+    {
+      "file": "window-05-46-00.json",
+      "url": "https://feed.lolesports.com/livestats/v1/window/117030752644841644?startingTime=2026-09-13T05:46:00.000Z",
+      "httpStatus": 200,
+      "sha256": "058d44fefe51443c7dc3a04b78eb5f57b1c4da3ae7ed7d748ad99a6a28007459"
+    },
+    {
+      "file": "end.json",
+      "url": "https://feed.lolesports.com/livestats/v1/window/117030752644841644?startingTime=2026-09-13T07:00:00.000Z",
+      "httpStatus": 200,
+      "sha256": "4a8df42ca429dad41db11ff3c12943e19b78ff0bee56c9ddb9815b9c1b48c7df"
+    },
+    {
+      "file": "details-kills.json",
+      "url": "https://feed.lolesports.com/livestats/v1/details/117030752644841644?startingTime=2026-09-13T05:45:20.000Z",
+      "httpStatus": 200,
+      "sha256": "c1e90270cbc23f66e6c1ad9f5436da44ae096b24ea2fca82b1231202c27b5ad7"
+    }
+  ],
+  "limitations": [
+    "No explicit game clock in feed: gameTimeSeconds remains null.",
+    "Per-game official winner absent from captured metadata: not inferred.",
+    "Series score is 0:0 during the selected first game, not final match score 3:1."
+  ],
+  "uniqueSourceTimestampCount": 333,
+  "duplicateFrameCount": 30
+}
