@@ -33,6 +33,9 @@ class HTTPError extends Error {
 interface Health {
   sourceMode?: 'live' | 'replay';
   sourceStatus: string;
+  source?: {
+    playback?: ReturnType<typeof useWidgetStore.getState>['playback'];
+  };
 }
 export function useMatchStream(settings: UserSettings, loaded: boolean) {
   const preferences = useRef(settings);
@@ -47,11 +50,18 @@ export function useMatchStream(settings: UserSettings, loaded: boolean) {
     store.getState().setMode(mode);
     if (!serverURL) {
       let index = 0;
-      store.setState({ matches: [demoMatch], sourceMode: 'replay', connected: true });
+      store.setState({
+        matches: [demoMatch],
+        sourceMode: 'replay',
+        connected: true,
+      });
       store.getState().setState({ ...demoFrames[0], receivedAt: new Date().toISOString() });
       const timer = setInterval(() => {
         index = Math.min(index + 1, demoFrames.length - 1);
-        const frame = { ...demoFrames[index], receivedAt: new Date().toISOString() };
+        const frame = {
+          ...demoFrames[index],
+          receivedAt: new Date().toISOString(),
+        };
         store.getState().setState(frame);
         store.getState().addEvents(
           demoEvents.filter((e) => e.sourceRevision === frame.revision),
@@ -78,7 +88,9 @@ export function useMatchStream(settings: UserSettings, loaded: boolean) {
       requestSignal.addEventListener('abort', abort, { once: true });
       const timeout = setTimeout(() => request.abort(), 10_000);
       try {
-        const r = await fetch(`${serverURL}/api/v1${path}`, { signal: request.signal });
+        const r = await fetch(`${serverURL}/api/v1${path}`, {
+          signal: request.signal,
+        });
         if (!r.ok) throw new HTTPError(r.status);
         return (await r.json()) as T;
       } finally {
@@ -177,7 +189,9 @@ export function useMatchStream(settings: UserSettings, loaded: boolean) {
       discovery = (async () => {
         try {
           const [matches, health] = await Promise.all([
-            json<MatchSummary[]>('/matches?league=worlds'),
+            json<MatchSummary[]>(
+              `/matches?league=${encodeURIComponent(import.meta.env.VITE_LEAGUE || 'worlds')}`,
+            ),
             json<Health>('/health'),
           ]);
           if (signal.aborted) return;
@@ -198,6 +212,7 @@ export function useMatchStream(settings: UserSettings, loaded: boolean) {
                   : null;
           store.setState({
             matches,
+            playback: health.source?.playback || null,
             sourceMode: health.sourceMode || (health.sourceStatus === 'replay' ? 'replay' : 'live'),
             ...(notice ? { notice } : {}),
           });
@@ -228,7 +243,10 @@ export function useMatchStream(settings: UserSettings, loaded: boolean) {
       return discovery;
     };
     void refreshDiscovery();
-    const timer = setInterval(() => void refreshDiscovery(), 60_000);
+    const timer = setInterval(
+      () => void refreshDiscovery(),
+      import.meta.env.VITE_LEAGUE === 'lck' ? 2_000 : 60_000,
+    );
     // Retry initial discovery faster than schedule refresh after a transport outage.
     let retryAttempt = 0;
     const recover = async () => {

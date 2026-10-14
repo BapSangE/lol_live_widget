@@ -10,6 +10,12 @@ interface WidgetState {
   ticker: MatchEvent | null;
   tickerUntil: number;
   sourceMode: 'live' | 'replay';
+  playback: {
+    kind: 'archive';
+    elapsedSeconds: number;
+    durationSeconds: number;
+    finished: boolean;
+  } | null;
   notice: string | null;
   connected: boolean;
   nextCursor: string | null;
@@ -28,6 +34,7 @@ const initial = {
   ticker: null,
   tickerUntil: 0,
   sourceMode: 'replay' as const,
+  playback: null,
   notice: null,
   connected: false,
   nextCursor: null,
@@ -50,7 +57,12 @@ export const useWidgetStore = create<WidgetState>((set, get) => ({
     set({
       state,
       ...(changed
-        ? { ticker: null, tickerUntil: 0, nextCursor: null, historyExhausted: false }
+        ? {
+            ticker: null,
+            tickerUntil: 0,
+            nextCursor: null,
+            historyExhausted: false,
+          }
         : {}),
     });
   },

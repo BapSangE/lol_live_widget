@@ -72,35 +72,44 @@ export default function App() {
   const aged = state ? deriveConnection(age) : 'offline';
   const connection = !widget.connected && aged === 'live' ? 'delayed' : aged;
   const sourceError = state?.sourceError;
+  const archive = widget.sourceMode === 'replay' && widget.playback?.kind === 'archive';
   const status =
     sourceError === 'access_denied'
       ? '데이터 접근 불가'
       : sourceError === 'rate_limited'
         ? '갱신 일시 지연'
-        : state?.status === 'ended'
-          ? '경기 종료'
-          : !widget.connected
-            ? '재연결 중'
-            : connection === 'delayed'
-              ? '데이터 지연'
-              : connection === 'offline'
-                ? '연결 끊김'
-                : widget.sourceMode === 'replay'
-                  ? '모의 데이터'
-                  : '라이브';
+        : archive && widget.connected
+          ? widget.playback?.finished
+            ? '재생 구간 종료'
+            : '과거 경기 재생'
+          : state?.status === 'ended'
+            ? '경기 종료'
+            : !widget.connected
+              ? '재연결 중'
+              : connection === 'delayed'
+                ? '데이터 지연'
+                : connection === 'offline'
+                  ? '연결 끊김'
+                  : widget.sourceMode === 'replay'
+                    ? '모의 데이터'
+                    : '라이브';
   const shownState = state
     ? {
         ...state,
         connection:
-          state.status === 'ended'
-            ? ('offline' as const)
-            : sourceError
-              ? state.connection
-              : connection,
+          archive && widget.connected
+            ? ('live' as const)
+            : state.status === 'ended'
+              ? ('offline' as const)
+              : sourceError
+                ? state.connection
+                : connection,
       }
     : null;
   const notice =
-    error || widget.notice || (connection !== 'live' && state?.status === 'live' ? status : null);
+    error ||
+    widget.notice ||
+    (!archive && connection !== 'live' && state?.status === 'live' ? status : null);
   const theme =
     settings.theme === 'system'
       ? window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -141,8 +150,11 @@ export default function App() {
             onExpand={() => widget.setMode('expanded')}
           />
           {widget.sourceMode === 'replay' && (
-            <span className="compact-mode-label" title="모의 데이터">
-              DEMO
+            <span
+              className="compact-mode-label"
+              title={archive ? '다운로드한 실제 경기 구간' : '모의 데이터'}
+            >
+              {archive ? 'REPLAY' : 'DEMO'}
             </span>
           )}
           {notice && (
@@ -157,6 +169,7 @@ export default function App() {
           events={widget.events}
           status={status}
           replay={widget.sourceMode === 'replay'}
+          playback={widget.playback}
           matches={widget.matches}
           onCollapse={() => widget.setMode('compact')}
           onSettings={() => widget.setMode('settings')}

@@ -12,3 +12,4 @@ __pycache__/
 *.egg-info/
 apps/desktop/src-tauri/gen/
 .ruff_cache/
+.env.local
