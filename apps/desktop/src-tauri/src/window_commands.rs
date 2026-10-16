@@ -32,3 +32,7 @@ mod tests {
  use super::*;
  #[test] fn alpha_values(){assert_eq!(alpha(10).unwrap(),26);assert_eq!(alpha(65).unwrap(),166);assert_eq!(alpha(100).unwrap(),255);assert!(alpha(9).is_err());assert!(alpha(101).is_err());}
 }
+#[tauri::command]
+pub fn quit_app(app: tauri::AppHandle) {
+ app.exit(0);
+}

@@ -57,11 +57,19 @@ export interface Area {
   width: number;
   height: number;
 }
-export function geometry(anchor: { x: number; y: number }, expanded: boolean, area: Area) {
-  const width = Math.min(expanded ? 350 : 270, area.width),
-    height = Math.min(expanded ? 300 : 38, area.height);
-  const upward = anchor.y + 38 >= area.y + area.height * 0.6;
-  const y = expanded && upward ? anchor.y + 38 - height : anchor.y;
+export const COMPACT_WIDTH = 350;
+export const COMPACT_HEIGHT = 62;
+export const EXPANDED_HEIGHT = 400;
+export function geometry(
+  anchor: { x: number; y: number },
+  expanded: boolean,
+  area: Area,
+  panelHeight = EXPANDED_HEIGHT,
+) {
+  const width = Math.min(COMPACT_WIDTH, area.width),
+    height = Math.min(expanded ? panelHeight : COMPACT_HEIGHT, area.height);
+  const upward = anchor.y + COMPACT_HEIGHT >= area.y + area.height * 0.6;
+  const y = expanded && upward ? anchor.y + COMPACT_HEIGHT - height : anchor.y;
   return {
     x: Math.max(area.x, Math.min(anchor.x, area.x + area.width - width)),
     y: Math.max(area.y, Math.min(y, area.y + area.height - height)),

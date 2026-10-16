@@ -43,7 +43,9 @@ python -m uvicorn app.main:app --app-dir apps/server --host 127.0.0.1 --port 800
 
 ## 동작
 
-- 270×38 스코어바, 클릭하면 350×300 상세 패널, Esc로 접기.
+- 최소화 350×62: 위쪽 스코어바와 아래쪽 최신 경기 기록 한 줄. 클릭하면 같은 폭의 350×400 상세 패널, Esc로 접기. 설정 패널은 350×300입니다.
+- 상세 패널은 기록 영역을 최소 120px 확보해 통계를 펼쳐도 일반적인 기록 두 건을 함께 볼 수 있습니다. 화면이 작으면 작업 영역에 맞추고 내부 스크롤을 사용합니다.
+- 아래 기록은 현재 세트의 최신 1건을 유지하고 새 기록이 들어오면 교체합니다. 긴 문구는 말줄임표로 표시하며 전체 문구는 툴팁·상세 패널에서 확인합니다.
 - 손잡이로 이동. 트레이에서 숨기기·경기 선택·항상 위·설정·종료.
 - 불투명도 10~100%, 기본 65%. 글자와 아이콘을 포함한 전체 콘텐츠에 적용.
 - 기본 무음, 중요 사건 6초 치환. 이벤트가 불투명도를 바꾸지 않습니다.
@@ -79,9 +81,10 @@ Windows에서 `npm --prefix apps/desktop run tauri -- build`를 실행합니다.
 - 서버 재시작 시 이벤트 로그/revision이 초기화되며 클라이언트는 새 epoch로 재동기화합니다.
 - HTTPS reverse proxy를 사용하고 SSE 버퍼링을 끕니다. idle timeout은 heartbeat 15초보다 길게 설정합니다.
 - Docker: 저장소 루트에서 `docker build -f apps/server/Dockerfile -t lol-widget-server .`.
-- 실제 공급원: `SOURCE_MODE=live`, `SOURCE_APPROVED=true`, `LOLESPORTS_API_KEY`가 필요합니다. 승인 플래그는 권리 확인의 증거가 아니며 운영자가 실제 근거를 확보해야 합니다.
+- 공개 비공식 공급원: `SOURCE_MODE=live`, `SOURCE_APPROVED=true`, `LIVE_PROVIDER=public`, `LIVE_LEAGUES=worlds`를 지정합니다. 공개 일정 HTML과 경기 통계 feed를 읽으며 API 키는 사용하지 않습니다.
+- 기존 persisted API를 사용하려면 `LIVE_PROVIDER=persisted`와 해당 API용 `LOLESPORTS_API_KEY`가 필요합니다. `RGAPI-` Riot Developer 키로는 이 API에 접근할 수 없습니다.
 - 인증 거절은 빠른 재시도 없이 수집 중단합니다. 자격 증명 수정 후 서버를 재시작합니다.
-- 공급원 adapter는 아직 실제 응답 검증을 받지 않았습니다. 응답 필드가 없으면 `null`로 표시합니다.
+- 공개 일정과 과거 경기 feed는 실제 응답으로 검증했습니다. 진행 중 경기의 지속 수집과 세트 전환은 실전 검증이 남아 있습니다. 응답 필드가 없으면 `null`로 표시합니다.
 
 [구현 명세](docs/implementation_spec.md) · [API 계약](docs/api_contract.md) · [수용 테스트](docs/test_plan.md) · [기술 결정](docs/decisions/001-alpha-and-replay.md) · [검증 기록](docs/progress.md)
 
@@ -97,4 +100,20 @@ macOS에서는 저장소의 `LCK 리플레이 실행.command`를 더블 클릭�
 
 실제 다운로드한 원본 및 정규화 데이터는 `fixtures/captures/lck-2026-09-13-gen-hle-game1/`에 있습니다. 2026-09-13 경기의 약 70초 샘플이며 전체 경기 녹화가 아닙니다. 게임 시계는 원본에서 제공하지 않아 `--:--`로 표시합니다. 화면의 ‘재생’ 시간은 샘플 내 경과 시간입니다. 원본 다운로드 후 재생 중에는 외부 데이터 요청이나 API 키가 필요하지 않습니다.
 
-이 실행 명령은 **과거 경기 재생 전용**입니다. 실제 경기가 시작해도 새 경기로 자동 전환하지 않습니다. 라이브는 서버의 `SOURCE_MODE=live`, 공급자 접근 설정(`SOURCE_APPROVED=true`, `LOLESPORTS_API_KEY`), 위젯의 `VITE_SERVER_URL`과 지원하는 리그 설정을 별도로 준비해야 합니다. 현재 라이브 공급자는 Worlds 검색에 맞춰져 있으며, LCK 자동 탐색과 실제 라이브 연결은 추가 구현 및 검증이 필요합니다. API 키 없이 과거 feed를 읽은 결과는 라이브 경기 자동 탐색이 검증됐다는 의미가 아닙니다.
+이 실행 명령은 **과거 경기 재생 전용**입니다. 실제 경기가 시작해도 새 경기로 자동 전환하지 않습니다. 실제 경기 탐색은 아래의 별도 라이브 실행 명령을 사용합니다. API 키 없이 과거 feed를 읽은 결과는 진행 중 경기의 연속 수집까지 검증됐다는 의미가 아닙니다.
+
+### 공개 비공식 API로 라이브 실행
+
+macOS에서는 `라이브 위젯 실행.command`를 더블 클릭하거나 다음을 실행합니다.
+
+```sh
+.venv312/bin/python scripts/run_live.py
+```
+
+http://127.0.0.1:1420 에서 Worlds 위젯을 확인합니다. API 키를 읽거나 전송하지 않습니다. 진행 중 경기가 없으면 다음 일정과 `경기 대기`를 표시하며, 실행을 유지하면 60초마다 새 경기를 찾습니다. 종료는 실행 터미널에서 Ctrl+C입니다. 리플레이와 같은 포트를 사용하므로 이전 실행을 먼저 종료해야 합니다.
+
+LCK를 선택하려면 `.venv312/bin/python scripts/run_live.py --league lck`를 사용합니다. 현재 실제 일정 응답 검증은 Worlds 기준이며 다른 리그는 실제 경기 검증이 필요합니다.
+
+이 경로는 공개 페이지의 `ApolloSSRDataTransport` 경기 JSON을 해석하고 `feed.lolesports.com`의 10초 통계 구간을 수집합니다. 웹페이지 JavaScript 실행이나 다른 저장소의 키 복사는 하지 않습니다. 공개 페이지가 캐시되면 경기 발견·세트 전환이 늦을 수 있습니다. feed는 현재 시각보다 약20초 전까지 조회하며, 이 값은 방송 대비 실측 지연이 아닙니다. 페이지 형식 변경·접근 거절은 공급원 오류로 처리합니다.
+
+2026-10-16 확인: 공개 일정 40건, 진행 중 Worlds 0건, 다음 일정 한국 시간 10월17일 03:00. 따라서 실제 라이브 스코어의 연속 갱신까지 검증된 상태는 아닙니다. 자세한 기록은 [공개 공급원 검증](docs/unofficial_live_validation.md)을 참고합니다.

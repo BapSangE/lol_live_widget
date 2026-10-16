@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def main():
+def main(*, live=False, league="worlds"):
     node = ROOT / ".tools/node-v22.23.3-darwin-arm64/bin/node"
     node = str(node) if node.exists() else shutil.which("node")
     if not node:
@@ -22,14 +22,24 @@ def main():
                 raise SystemExit(
                     f"Port {port} is in use. Stop the previous preview (Ctrl+C) first."
                 )
-    env = dict(
-        os.environ,
-        SOURCE_MODE="replay",
-        POLL_SECONDS="1",
-        REPLAY_FIXTURE="fixtures/captures/lck-2026-09-13-gen-hle-game1/frames.json",
-        VITE_SERVER_URL="http://127.0.0.1:8000",
-        VITE_LEAGUE="lck",
-    )
+    env = dict(os.environ, VITE_SERVER_URL="http://127.0.0.1:8000")
+    if live:
+        env.update(
+            SOURCE_MODE="live",
+            SOURCE_APPROVED="true",
+            LIVE_PROVIDER="public",
+            LIVE_LEAGUES=league,
+            VITE_LEAGUE=league,
+            POLL_SECONDS="10",
+        )
+        env.pop("REPLAY_FIXTURE", None)
+    else:
+        env.update(
+            SOURCE_MODE="replay",
+            POLL_SECONDS="1",
+            VITE_LEAGUE="lck",
+            REPLAY_FIXTURE="fixtures/captures/lck-2026-09-13-gen-hle-game1/frames.json",
+        )
     processes = []
     try:
         processes.append(
@@ -65,10 +75,12 @@ def main():
                 env=env,
             )
         )
-        print(
-            "Starting LCK archive: http://127.0.0.1:1420 — 69-second sample. Ctrl+C stops both; run again to replay.",
-            flush=True,
+        description = (
+            f"Live {league}: http://127.0.0.1:1420 — public schedule/feed, no API key. Waiting if no match is live."
+            if live
+            else "Starting LCK archive: http://127.0.0.1:1420 — 69-second sample. Ctrl+C stops both; run again to replay."
         )
+        print(description, flush=True)
         while all(p.poll() is None for p in processes):
             time.sleep(0.5)
         raise SystemExit("Preview process stopped unexpectedly; see the error above.")

@@ -41,11 +41,21 @@ describe('ticker', () => {
   });
   it('expands upward at bottom and clamps negative-origin monitor', () => {
     expect(geometry({ x: 200, y: 950 }, true, { x: 0, y: 0, width: 1920, height: 1040 }).y).toBe(
-      688,
+      612,
     );
     const r = geometry({ x: -5, y: 20 }, true, { x: -1280, y: 0, width: 1280, height: 984 });
     expect(r.x).toBe(-350);
     expect(r.y).toBe(20);
+  });
+  it('keeps both compact rows inside the monitor and preserves the bottom edge on expansion', () => {
+    const area = { x: 0, y: 0, width: 1920, height: 1040 };
+    const compact = geometry({ x: 1800, y: 1000 }, false, area);
+    expect(compact).toEqual({ x: 1570, y: 978, width: 350, height: 62 });
+    const expanded = geometry({ x: compact.x, y: compact.y }, true, area);
+    expect(expanded.width).toBe(compact.width);
+    expect(expanded.y + expanded.height).toBe(1040);
+    const small = geometry({ x: 20, y: 20 }, false, { x: 0, y: 0, width: 200, height: 50 });
+    expect(small).toEqual({ x: 0, y: 0, width: 200, height: 50 });
   });
   it('restores corrupted settings safely', () => {
     const s = validateSettings({
