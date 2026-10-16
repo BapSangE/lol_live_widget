@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   getCurrentWindow,
   availableMonitors,
@@ -27,6 +27,7 @@ export function useWindowGeometry(
   onError: (message: string) => void,
 ) {
   const anchor = useRef({ x: 0, y: 0 });
+  const [monitorRevision, setMonitorRevision] = useState(0);
   const compactHeight = Math.ceil((COMPACT_HEIGHT * settings.fontScalePercent) / 100);
   const lastCompactHeight = useRef(compactHeight);
   const initialized = useRef(false),
@@ -59,6 +60,7 @@ export function useWindowGeometry(
                   x: (area.width - COMPACT_WIDTH) / 2,
                   y: area.height - compactHeight - 24,
                 };
+          lastCompactHeight.current = compactHeight;
           initialized.current = true;
         }
         if (!monitor) return;
@@ -98,7 +100,22 @@ export function useWindowGeometry(
         );
         lastMode.current = mode;
         lastCompactHeight.current = compactHeight;
-        if (!disposed) await win.show();
+        if (!disposed) {
+          const position = {
+            monitorKey: monitorKey(monitor),
+            ...anchor.current,
+            anchor: 'compact' as const,
+          };
+          setSettings((s) => {
+            const saved = s.widgetPosition;
+            return saved?.monitorKey === position.monitorKey &&
+              saved.x === position.x &&
+              saved.y === position.y
+              ? s
+              : { ...s, widgetPosition: position };
+          });
+          await win.show();
+        }
       } catch (error) {
         console.error(error);
         onError('창 위치를 적용할 수 없음');
@@ -110,7 +127,15 @@ export function useWindowGeometry(
     return () => {
       disposed = true;
     };
-  }, [loaded, mode, onError, compactHeight, settings.fontScalePercent]);
+  }, [
+    loaded,
+    mode,
+    onError,
+    compactHeight,
+    settings.fontScalePercent,
+    monitorRevision,
+    setSettings,
+  ]);
   useEffect(() => {
     if (!native || !loaded) return;
     let disposed = false;
@@ -159,7 +184,7 @@ export function useWindowGeometry(
       });
     void win
       .onScaleChanged(() => {
-        void moved();
+        if (!disposed) setMonitorRevision((revision) => revision + 1);
       })
       .then((off) => {
         if (disposed) off();
