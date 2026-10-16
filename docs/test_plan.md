@@ -1,4 +1,13 @@
-# 수용 테스트 및 출시 게이트
+# 수용 테스트 및 후속 검증
+
+## 1차 확인 — 2026-10-16
+
+- [x] Windows x64 단일 EXE 빌드와 내장 서버 smoke test (GitHub Actions).
+- [x] 사용자 Windows PC에서 실행 확인 (사용자 보고).
+
+위 실행 확인은 아래 세부 항목 전체의 통과를 뜻하지 않는다. 실제 라이브 경기 수집과 창 동작은 항목별로 추가 확인한다.
+
+## 상세 체크리스트
 
 자동 테스트: detector, memory snapshots/cursors, API bootstrap/access rejection, client policies/SSE/UI, Rust settings/alpha. 실행 명령은 README 참조.
 
@@ -28,4 +37,4 @@ Windows 실기기/VM에서 아래 항목을 확인하고 증거(스크린샷, OS
 - [ ] 이전 버전 수동 업그레이드와 제거
 - [ ] 공급원 사용 근거·상표·재배포 조건 확인
 
-모의 MVP와 라이브 출시 가능은 별도 게이트다. Windows CI 빌드는 실제 창 입력·DPI 검증을 대신하지 않는다.
+1차 실행 확인과 실제 라이브 수신 검증은 별도로 기록한다. Windows CI 빌드는 실제 창 입력·DPI 검증을 대신하지 않는다.

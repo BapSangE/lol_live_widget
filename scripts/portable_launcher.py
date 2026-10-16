@@ -24,7 +24,7 @@ def bundle_root() -> Path:
 
 
 class EmbeddedServer:
-    def __init__(self, *, demo=False, league="worlds"):
+    def __init__(self, *, demo: bool = False, league: str = "worlds") -> None:
         self.demo, self.league = demo, league
         self.origin = ""
         self.socket = None
@@ -124,7 +124,7 @@ def has_webview() -> bool:
     return False
 
 
-def ensure_webview():
+def ensure_webview() -> None:
     if has_webview():
         return
     import ctypes

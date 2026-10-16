@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def main(*, live=False, league="worlds"):
+def main(*, live: bool = False, league: str = "worlds") -> None:
     node = ROOT / ".tools/node-v22.23.3-darwin-arm64/bin/node"
     node = str(node) if node.exists() else shutil.which("node")
     if not node:

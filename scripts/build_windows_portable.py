@@ -13,7 +13,7 @@ import httpx
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def main():
+def main() -> None:
     if sys.platform != "win32":
         raise SystemExit(
             "This build must run on Windows (or GitHub Actions windows-latest)."
