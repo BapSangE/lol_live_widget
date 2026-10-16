@@ -40,11 +40,11 @@ Windows는 EXE를 더블 클릭하고, Mac은 DMG 안의 앱을 Applications로 
   </tr>
   <tr>
     <td valign="top"><img src="docs/images/widget-expanded.jpg" alt="확장 위젯: 경기 정보와 기록 영역" width="350"></td>
-    <td valign="top"><img src="docs/images/widget-settings.jpg" alt="설정: 글자 크기, 불투명도, 항상 위, 자동 실행" width="350"></td>
+    <td valign="top"><img src="docs/images/widget-favorite-team.jpg" alt="v0.2.0 설정: 응원 팀, 경기 선택, 글자 크기, 불투명도" width="350"></td>
   </tr>
 </table>
 
-*v0.1.0 macOS 앱에서 직접 촬영한 라이트 테마 화면입니다. 촬영 당시 진행 중인 경기가 없어 대기 상태를 표시합니다. 설정 화면은 스크롤 영역의 상단입니다.*
+*macOS 앱에서 직접 촬영한 라이트 테마 화면입니다. 설정 화면은 응원 팀 선택이 추가된 v0.2.0이며, 스크롤 영역의 상단을 보여줍니다. 최소화·확장 화면은 v0.1.0에서 촬영한 경기 대기 상태입니다.*
 
 ## 주요 기능
 
