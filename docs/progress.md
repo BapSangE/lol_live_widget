@@ -1,11 +1,20 @@
 # LoL Live Widget — 1차 완료 및 검증 기록
 
+## 2026-10-16 v0.2.0 응원 팀 알림
+
+- 설정에 응원 팀 선택·다음 일정 표시 추가. 현재 리그에서 발견한 팀과 저장한 팀을 선택 목록으로 제공함.
+- 앱 실행 중 해당 팀의 라이브 경기를 발견하면 15초 무음 위젯 팝업, 확장 및 숨김 해제, 경기 수신 연결 자동 전환을 수행함. 최초 발견 시 이미 라이브면 진행 중으로 안내함.
+- 최근 50개 경기의 알림 이력을 설정에 저장해 재실행·세트 변경·재연결 중복을 방지함. 이후 수동 경기 선택은 유지함.
+- OS 알림 센터가 아닌 위젯 자체 알림. 앱 종료 중 알림은 제공하지 않음. 공개 일정과 라이브 상태 갱신 지연의 영향을 받음.
+- 기존 v1 설정의 새 필드 누락을 기본값으로 복원하며 프런트엔드와 Rust가 팀 정보·이력을 검증함.
+- UI 30/30, Rust 6/6, TypeScript 및 Vite production 빌드 통과. 실제 라이브 알림과 숨김 해제의 OS별 수용 검증은 남아 있음.
+
 ## 2026-10-16 첫 GitHub Release 배포 정리
 
 - 루트의 개발용 `.command` 런처 2개를 제거함. 공개 라이브/실제 경기 샘플 재현은 `scripts/run_live.py`, `scripts/run_lck_replay.py`로 유지함.
 - README 상단에 Windows EXE·macOS arm64 DMG 직접 다운로드와 릴리스 링크를 추가함. Actions artifact 다운로드는 일반 사용자 사용 경로에서 제외함.
 - Windows는 소스 `74dc522`의 성공한 [portable CI 빌드](https://github.com/BapSangE/lol_live_widget/actions/runs/38860073574) 산출물, Mac은 사용자 실행 확인을 마친 동일 기능의 로컬 DMG를 배포 대상으로 준비함.
-- 배포 파일은 Git 저장소에 직접 넣지 않고 GitHub Release assets에 올리며, SHA-256 목록을 함께 제공함.
+- [v0.1.0 Release](https://github.com/BapSangE/lol_live_widget/releases/tag/v0.1.0)에 EXE·DMG·SHA256SUMS.txt 게시 완료. 공개 체크섬 다운로드와 업로드 digest 일치를 확인함.
 
 ## 2026-10-16 macOS 앱 패키징 및 문서 정리
 

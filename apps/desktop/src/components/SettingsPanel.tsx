@@ -1,3 +1,4 @@
+import { favoriteTeams, hasTeam, nextFavoriteMatch } from '../lib/favorites';
 import type { EventType, MatchSummary, UserSettings } from '../types/contracts';
 const eventNames: Record<EventType, string> = {
   GAME_END: '게임 종료',
@@ -17,6 +18,13 @@ interface Props {
   onBack: () => void;
 }
 export function SettingsPanel({ settings, matches, onChange, onBack }: Props) {
+  const teams = favoriteTeams(matches, settings.favoriteTeam);
+  const next = settings.favoriteTeam
+    ? nextFavoriteMatch(matches, settings.favoriteTeam.id)
+    : undefined;
+  const liveFavorite =
+    settings.favoriteTeam &&
+    matches.some((m) => m.status === 'live' && hasTeam(m, settings.favoriteTeam!.id));
   return (
     <section className="panel settings">
       <header className="panel-header">
@@ -26,6 +34,38 @@ export function SettingsPanel({ settings, matches, onChange, onBack }: Props) {
         </button>
       </header>
       <div className="settings-scroll">
+        <label className="field">
+          응원 팀
+          <select
+            value={settings.favoriteTeam?.id || ''}
+            onChange={(e) =>
+              onChange({
+                favoriteTeam: teams.find((t) => t.id === e.target.value) || null,
+              })
+            }
+          >
+            <option value="">선택 안 함</option>
+            {teams.map((team) => (
+              <option key={team.id} value={team.id}>
+                {team.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="hint favorite-hint">
+          현재 리그의 일정에 있는 팀을 선택합니다. 앱 실행 중 경기가 시작되면 위젯을
+          펼쳐 무음 알림을 표시하고 해당 경기로 자동 전환합니다.
+        </p>
+        {settings.favoriteTeam && (
+          <p className="favorite-schedule">
+            {liveFavorite
+              ? '응원 팀 경기 진행 중'
+              : next
+                ? `다음 경기 · ${next.blue.shortName} vs ${next.red.shortName} · ${next.scheduledAt ? new Date(next.scheduledAt).toLocaleString('ko-KR') : '시각 미정'}`
+                : '예정된 응원 팀 경기가 없습니다.'}
+          </p>
+        )}
+
         <label className="field">
           경기 선택
           <select
@@ -118,7 +158,9 @@ export function SettingsPanel({ settings, matches, onChange, onBack }: Props) {
           테마
           <select
             value={settings.theme}
-            onChange={(e) => onChange({ theme: e.target.value as UserSettings['theme'] })}
+            onChange={(e) =>
+              onChange({ theme: e.target.value as UserSettings['theme'] })
+            }
           >
             <option value="light">라이트</option>
             <option value="dark">다크</option>

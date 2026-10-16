@@ -1,4 +1,5 @@
 import { isTauri, invoke } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { defaults, validateSettings } from './policies';
 import type { UserSettings } from '../types/contracts';
 export const native = isTauri();
@@ -24,4 +25,9 @@ export async function setAutostart(enabled: boolean) {
   const plugin = await import('@tauri-apps/plugin-autostart');
   if (enabled) await plugin.enable();
   else await plugin.disable();
+}
+
+export async function showWidget() {
+  if (!native) return;
+  await getCurrentWindow().show();
 }

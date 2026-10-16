@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { native, setAutostart } from './lib/native';
 import { deriveConnection } from './lib/policies';
 import { useWidgetStore } from './state/widgetStore';
+import { useFavoriteTeam } from './hooks/useFavoriteTeam';
 import { useSettings } from './hooks/useSettings';
 import { useOpacity } from './hooks/useOpacity';
 import { useWindowGeometry } from './hooks/useWindowGeometry';
@@ -24,6 +25,11 @@ export default function App() {
   const { opacity } = useOpacity(settings, hovered, report);
   useWindowGeometry(widget.mode, settings, loaded, setSettings, report);
   useMatchStream(settings, loaded && serverReady && !closed);
+  const favorite = useFavoriteTeam(
+    settings,
+    loaded && serverReady && !closed,
+    setSettings,
+  );
   useEffect(() => {
     if (!native) return;
     let active = true;
@@ -241,6 +247,14 @@ export default function App() {
           onChange={(patch) => void change(patch)}
           onBack={() => widget.setMode('expanded')}
         />
+      )}
+      {favorite.alert && (
+        <div className="favorite-alert" role="alert">
+          <span>{favorite.alert}</span>
+          <button aria-label="응원 팀 알림 닫기" onClick={favorite.dismiss}>
+            ×
+          </button>
+        </div>
       )}
       {notice && widget.mode !== 'compact' && (
         <div className="notice" role="status">

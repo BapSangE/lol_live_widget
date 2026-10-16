@@ -613,3 +613,34 @@ input[type='checkbox'] {
     animation: none;
   }
 }
+
+.favorite-hint {
+  margin-top: -4px;
+}
+.favorite-schedule {
+  font-size: calc(11px * var(--text-scale, 1));
+  color: var(--accent, #287b63);
+  line-height: 1.6;
+}
+.favorite-alert {
+  position: absolute;
+  top: 42px;
+  left: 8px;
+  right: 8px;
+  z-index: 20;
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #17634c;
+  color: #fff;
+  box-shadow: 0 4px 16px #0003;
+  font-size: calc(12px * var(--text-scale, 1));
+  line-height: 1.5;
+}
+.favorite-alert button {
+  color: inherit;
+  flex-shrink: 0;
+}

@@ -27,6 +27,8 @@ export const defaults: UserSettings = {
   brightenOnHover: false,
   eventDisplaySeconds: 6,
   preferredMatchId: null,
+  favoriteTeam: null,
+  notifiedFavoriteMatchIds: [],
   importantTypes: defaultImportant,
   alwaysOnTop: true,
   launchAtLogin: false,
@@ -50,8 +52,11 @@ export function chooseTicker(
 }
 export const deriveConnection = (seconds: number): 'live' | 'delayed' | 'offline' =>
   seconds > 120 ? 'offline' : seconds > 30 ? 'delayed' : 'live';
-export const effectiveOpacity = (percent: number, enabled: boolean, hovered: boolean) =>
-  enabled && hovered ? 100 : percent;
+export const effectiveOpacity = (
+  percent: number,
+  enabled: boolean,
+  hovered: boolean,
+) => (enabled && hovered ? 100 : percent);
 export interface Area {
   x: number;
   y: number;
@@ -93,6 +98,7 @@ export function validateSettings(raw: unknown): UserSettings {
     v[k] % step === 0
       ? (v[k] as number)
       : d;
+  const favorite = v.favoriteTeam as Record<string, unknown> | null;
   const p = v.widgetPosition as Record<string, unknown> | null;
   return {
     schemaVersion: 1,
@@ -102,7 +108,26 @@ export function validateSettings(raw: unknown): UserSettings {
       : 100,
     brightenOnHover: bool('brightenOnHover', false),
     eventDisplaySeconds: num('eventDisplaySeconds', 3, 15, 1, 6),
-    preferredMatchId: typeof v.preferredMatchId === 'string' ? v.preferredMatchId : null,
+    preferredMatchId:
+      typeof v.preferredMatchId === 'string' ? v.preferredMatchId : null,
+    favoriteTeam:
+      favorite &&
+      typeof favorite.id === 'string' &&
+      favorite.id.trim().length > 0 &&
+      favorite.id.length <= 128 &&
+      typeof favorite.name === 'string' &&
+      favorite.name.trim().length > 0 &&
+      favorite.name.length <= 100
+        ? { id: favorite.id, name: favorite.name }
+        : null,
+    notifiedFavoriteMatchIds: Array.isArray(v.notifiedFavoriteMatchIds)
+      ? v.notifiedFavoriteMatchIds
+          .filter(
+            (id): id is string =>
+              typeof id === 'string' && id.length > 0 && id.length <= 128,
+          )
+          .slice(-50)
+      : [],
     importantTypes: Array.isArray(v.importantTypes)
       ? v.importantTypes.filter(
           (t): t is EventType => typeof t === 'string' && t in eventRank,

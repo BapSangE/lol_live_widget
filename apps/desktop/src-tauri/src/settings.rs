@@ -11,6 +11,8 @@ pub struct Settings {
     pub brighten_on_hover: bool,
     pub event_display_seconds: u8,
     pub preferred_match_id: Option<String>,
+    pub favorite_team: Option<FavoriteTeam>,
+    pub notified_favorite_match_ids: Vec<String>,
     pub important_types: Vec<String>,
     pub always_on_top: bool,
     pub launch_at_login: bool,
@@ -18,11 +20,13 @@ pub struct Settings {
     pub widget_position: Option<Position>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FavoriteTeam { pub id: String, pub name: String }
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Position { pub monitor_key: Option<String>, pub x: f64, pub y: f64, #[serde(default="compact")] pub anchor: String }
 fn compact()->String { "compact".into() }
 impl Default for Settings {
- fn default()->Self {Self {schema_version:1,opacity_percent:65,font_scale_percent:100,brighten_on_hover:false,event_display_seconds:6,preferred_match_id:None,important_types:vec!["GAME_END","BARON","ELDER","GOLD_LEAD_CHANGE","DRAGON_SOUL","MULTIKILL_WINDOW","DRAGON","TOWER"].into_iter().map(String::from).collect(),always_on_top:true,launch_at_login:false,theme:"light".into(),widget_position:None}}
+ fn default()->Self {Self {schema_version:1,opacity_percent:65,font_scale_percent:100,brighten_on_hover:false,event_display_seconds:6,preferred_match_id:None,favorite_team:None,notified_favorite_match_ids:vec![],important_types:vec!["GAME_END","BARON","ELDER","GOLD_LEAD_CHANGE","DRAGON_SOUL","MULTIKILL_WINDOW","DRAGON","TOWER"].into_iter().map(String::from).collect(),always_on_top:true,launch_at_login:false,theme:"light".into(),widget_position:None}}
 }
 impl Settings {
  pub fn validate(&self)->Result<(),String>{
@@ -32,6 +36,8 @@ impl Settings {
   if !(3..=15).contains(&self.event_display_seconds){return Err("Invalid event duration".into());}
   if !["light","dark","system"].contains(&self.theme.as_str()){return Err("Invalid theme".into());}
   if self.important_types.iter().any(|t|!["GAME_END","BARON","ELDER","GOLD_LEAD_CHANGE","DRAGON_SOUL","MULTIKILL_WINDOW","DRAGON","TOWER","KILL_DELTA"].contains(&t.as_str())){return Err("Unknown event filter".into());}
+  if let Some(team)=&self.favorite_team {if team.id.trim().is_empty() || team.id.len()>128 || team.name.trim().is_empty() || team.name.chars().count()>100 {return Err("Invalid favorite team".into());}}
+  if self.notified_favorite_match_ids.len()>50 || self.notified_favorite_match_ids.iter().any(|id|id.is_empty()||id.len()>128){return Err("Invalid favorite notification history".into());}
   if let Some(p)=&self.widget_position {if !p.x.is_finite()||!p.y.is_finite()||p.anchor!="compact" {return Err("Invalid position".into());}}
   Ok(())
  }
@@ -55,6 +61,18 @@ pub fn save_settings(app:tauri::AppHandle,settings:Settings)->Result<(),String>{
 #[cfg(test)]
 mod tests {
  use super::*;
+ #[test] fn favorite_team_migrates_and_roundtrips() {
+  let older:Settings=serde_json::from_str(r#"{"opacityPercent":35}"#).unwrap();
+  let json=serde_json::to_value(older).unwrap();
+  assert_eq!(json["notifiedFavoriteMatchIds"],serde_json::json!([]));
+  assert!(json["favoriteTeam"].is_null());
+  let saved:Settings=serde_json::from_str(r#"{"favoriteTeam":{"id":"team-1","name":"Team One"},"notifiedFavoriteMatchIds":["series-1"]}"#).unwrap();
+  assert!(saved.validate().is_ok());
+  assert_eq!(serde_json::to_value(saved).unwrap()["favoriteTeam"]["id"],"team-1");
+  let bad:Settings=serde_json::from_str(r#"{"favoriteTeam":{"id":"","name":"Team"}}"#).unwrap();
+  assert!(bad.validate().is_err());
+ }
+
  #[test] fn font_size_migrates_and_validates() {
   let older:Settings=serde_json::from_str(r#"{"opacityPercent":35}"#).unwrap();
   let json=serde_json::to_value(&older).unwrap();

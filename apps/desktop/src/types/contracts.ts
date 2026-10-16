@@ -6,6 +6,10 @@ export type TeamState = components['schemas']['TeamState'];
 export type MatchSummary = components['schemas']['MatchSummary'];
 export type SyncSnapshot = components['schemas']['SyncSnapshot'];
 export type EventsPage = components['schemas']['EventsPage'];
+export interface FavoriteTeam {
+  id: string;
+  name: string;
+}
 export interface UserSettings {
   schemaVersion: 1;
   opacityPercent: number;
@@ -13,6 +17,8 @@ export interface UserSettings {
   brightenOnHover: boolean;
   eventDisplaySeconds: number;
   preferredMatchId: string | null;
+  favoriteTeam: FavoriteTeam | null;
+  notifiedFavoriteMatchIds: string[];
   importantTypes: EventType[];
   alwaysOnTop: boolean;
   launchAtLogin: boolean;
