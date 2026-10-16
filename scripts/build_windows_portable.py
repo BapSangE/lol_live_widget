@@ -39,7 +39,7 @@ def main():
     )
     signature = subprocess.run(
         [
-            "powershell.exe",
+            shutil.which("pwsh") or "powershell.exe",
             "-NoProfile",
             "-NonInteractive",
             "-File",
