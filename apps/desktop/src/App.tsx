@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 import { native, setAutostart } from './lib/native';
@@ -58,12 +58,12 @@ export default function App() {
     if (!native) return;
     const off: Array<() => void> = [];
     let stopped = false;
-    void listen('open-settings', () => useWidgetStore.getState().setMode('settings')).then(
-      (f) => {
-        if (stopped) f();
-        else off.push(f);
-      },
-    );
+    void listen('open-settings', () =>
+      useWidgetStore.getState().setMode('settings'),
+    ).then((f) => {
+      if (stopped) f();
+      else off.push(f);
+    });
     void listen<boolean>('always-on-top-changed', (e) =>
       setSettings((s) => ({ ...s, alwaysOnTop: e.payload })),
     ).then((f) => {
@@ -164,9 +164,17 @@ export default function App() {
       setError('위젯을 종료할 수 없음');
     }
   };
+  const fontScale = settings.fontScalePercent / 100;
+  const widgetStyle = {
+    opacity,
+    '--text-scale': fontScale,
+    '--compact-height': `${Math.ceil(62 * fontScale)}px`,
+    '--expanded-height': `${Math.ceil(400 * fontScale)}px`,
+    '--settings-height': `${Math.ceil(300 * fontScale)}px`,
+  } as CSSProperties;
   if (closed)
     return (
-      <main className={`widget closed theme-${theme}`}>
+      <main className={`widget closed theme-${theme}`} style={widgetStyle}>
         <span>위젯이 종료되었습니다</span>
         <button onClick={() => setClosed(false)}>다시 열기</button>
       </main>
@@ -174,7 +182,7 @@ export default function App() {
   return (
     <main
       className={`widget ${widget.mode} theme-${theme}`}
-      style={{ opacity }}
+      style={widgetStyle}
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
     >

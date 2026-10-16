@@ -3,7 +3,7 @@
   font-synthesis: none;
   color: #25352f;
   background: transparent;
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1));
 }
 * {
   box-sizing: border-box;
@@ -35,6 +35,7 @@ button:hover {
   background: var(--hover);
 }
 .widget {
+  font-size: calc(12px * var(--text-scale, 1));
   --bg: #f8faf9;
   --text: #25352f;
   --muted: #7b8882;
@@ -48,7 +49,7 @@ button:hover {
   overflow: hidden;
   transition: opacity 150ms ease;
   width: min(350px, 100vw);
-  height: min(62px, 100vh);
+  height: min(var(--compact-height, 62px), 100vh);
 }
 .widget.compact {
   display: flex;
@@ -60,12 +61,12 @@ button:hover {
   right: 5px;
   z-index: 2;
   width: 24px;
-  height: 24px;
+  height: calc(24px * var(--text-scale, 1));
   padding: 0;
   border-radius: 4px;
   color: var(--muted);
-  font-size: 19px;
-  line-height: 24px;
+  font-size: calc(19px * var(--text-scale, 1));
+  line-height: calc(24px * var(--text-scale, 1));
 }
 .widget-close:hover {
   background: #ba3a3a;
@@ -85,17 +86,17 @@ button:hover {
 .widget.expanded,
 .widget.settings {
   width: min(350px, 100vw);
-  height: min(300px, 100vh);
+  height: min(var(--settings-height, 300px), 100vh);
 }
 .widget.expanded {
-  height: min(400px, 100vh);
+  height: min(var(--expanded-height, 400px), 100vh);
 }
 .panel.expanded .panel-body {
   overflow-y: auto;
   scrollbar-width: thin;
 }
 .panel.expanded .event-log {
-  min-height: 120px;
+  min-height: calc(120px * var(--text-scale, 1));
 }
 .theme-dark {
   --bg: #17231f;
@@ -105,7 +106,7 @@ button:hover {
   --hover: #25372e;
 }
 .scorebar {
-  height: 36px;
+  height: calc(36px * var(--text-scale, 1));
   flex-shrink: 0;
   padding-right: 29px;
   display: flex;
@@ -117,7 +118,7 @@ button:hover {
   cursor: move;
   color: var(--muted);
   text-align: center;
-  font-size: 16px;
+  font-size: calc(16px * var(--text-scale, 1));
   user-select: none;
   touch-action: none;
 }
@@ -153,43 +154,43 @@ button:hover {
   min-width: 0;
 }
 .team-name {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1));
   font-weight: 600;
-  max-width: 44px;
+  max-width: calc(44px * var(--text-scale, 1));
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .score-line strong {
   white-space: nowrap;
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1));
   letter-spacing: 1px;
 }
 .time {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1));
   white-space: nowrap;
   margin-left: auto;
 }
 .expand-chevron {
   color: var(--muted);
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale, 1));
 }
 .compact-mode-label {
   position: absolute;
-  font-size: 6px;
+  font-size: calc(6px * var(--text-scale, 1));
   letter-spacing: 0.5px;
   color: var(--muted);
   left: 24px;
-  top: 27px;
+  top: calc(27px * var(--text-scale, 1));
   pointer-events: none;
 }
 .compact-notice {
   position: absolute;
   right: 2px;
-  top: 27px;
+  top: calc(27px * var(--text-scale, 1));
   color: #b07b10;
-  font-size: 8px;
+  font-size: calc(8px * var(--text-scale, 1));
   pointer-events: none;
 }
 .compact-record {
@@ -208,12 +209,12 @@ button:hover {
 .compact-record-label {
   flex-shrink: 0;
   color: #168f6c;
-  font-size: 9px;
+  font-size: calc(9px * var(--text-scale, 1));
 }
 .compact-record time {
   flex-shrink: 0;
   color: var(--muted);
-  font-size: 9px;
+  font-size: calc(9px * var(--text-scale, 1));
   font-variant-numeric: tabular-nums;
 }
 .compact-record-message {
@@ -221,11 +222,11 @@ button:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1));
 }
 .compact-record.empty .compact-record-message {
   color: var(--muted);
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1));
 }
 .ticker {
   display: flex;
@@ -237,13 +238,13 @@ button:hover {
 }
 .ticker-mark {
   color: #168f6c;
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1));
 }
 .ellipsis {
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1));
 }
 .panel {
   height: 100%;
@@ -251,7 +252,7 @@ button:hover {
   flex-direction: column;
 }
 .panel-header {
-  height: 37px;
+  height: calc(37px * var(--text-scale, 1));
   flex-shrink: 0;
   border-bottom: 1px solid var(--line);
   display: flex;
@@ -260,7 +261,7 @@ button:hover {
   padding: 0 34px 0 12px;
 }
 .brand {
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1));
   font-weight: 700;
   letter-spacing: 0.8px;
   display: flex;
@@ -272,11 +273,11 @@ button:hover {
   color: #fff;
   border-radius: 4px;
   padding: 1px 4px;
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1));
 }
 .league {
   color: var(--muted);
-  font-size: 8px;
+  font-size: calc(8px * var(--text-scale, 1));
   font-weight: 500;
   margin-left: 4px;
 }
@@ -288,7 +289,7 @@ button:hover {
   width: 25px;
   height: 25px;
   border-radius: 4px;
-  font-size: 15px;
+  font-size: calc(15px * var(--text-scale, 1));
 }
 .panel-body {
   padding: 9px 12px 0;
@@ -301,7 +302,7 @@ button:hover {
   display: flex;
   justify-content: space-between;
   color: var(--muted);
-  font-size: 9px;
+  font-size: calc(9px * var(--text-scale, 1));
 }
 .connection.live {
   color: #168f6c;
@@ -316,18 +317,18 @@ button:hover {
   margin: 8px 0;
 }
 .match-heading > strong {
-  font-size: 17px;
+  font-size: calc(17px * var(--text-scale, 1));
   min-width: 75px;
   text-align: center;
 }
 .match-heading > span {
-  font-size: 22px;
+  font-size: calc(22px * var(--text-scale, 1));
   font-weight: 600;
   letter-spacing: 3px;
 }
 .match-heading small {
   color: var(--muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1));
   padding: 0 10px;
 }
 .stat-table {
@@ -340,12 +341,12 @@ button:hover {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   text-align: center;
-  font-size: 10px;
-  line-height: 16px;
+  font-size: calc(10px * var(--text-scale, 1));
+  line-height: calc(16px * var(--text-scale, 1));
 }
 .stat-row > span {
   color: var(--muted);
-  font-size: 9px;
+  font-size: calc(9px * var(--text-scale, 1));
 }
 .stat-row strong {
   font-weight: 500;
@@ -358,7 +359,7 @@ button:hover {
 }
 .unsupported {
   margin: 3px 0 0;
-  font-size: 9px;
+  font-size: calc(9px * var(--text-scale, 1));
   color: var(--muted);
 }
 .stat-toggle {
@@ -369,12 +370,12 @@ button:hover {
   border-radius: 3px;
   color: var(--muted);
   padding: 0 3px;
-  line-height: 18px;
-  font-size: 10px;
+  line-height: calc(18px * var(--text-scale, 1));
+  font-size: calc(10px * var(--text-scale, 1));
 }
 .stat-toggle > span {
   color: var(--text);
-  font-size: 16px;
+  font-size: calc(16px * var(--text-scale, 1));
 }
 .stat-table.collapsed .stat-label {
   border-bottom: 0;
@@ -387,11 +388,11 @@ button:hover {
   margin-top: 9px;
   padding-bottom: 5px;
   flex-shrink: 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1));
 }
 .log-heading > span:last-child {
   color: var(--muted);
-  font-size: 9px;
+  font-size: calc(9px * var(--text-scale, 1));
 }
 .event-log {
   flex: 1;
@@ -405,39 +406,39 @@ button:hover {
   gap: 8px;
   padding: 8px 0;
   border-top: 1px solid var(--line);
-  font-size: 13px;
+  font-size: calc(13px * var(--text-scale, 1));
   overflow-anchor: auto;
 }
 .log-row time {
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1));
   color: var(--muted);
   font-variant-numeric: tabular-nums;
-  line-height: 19px;
+  line-height: calc(19px * var(--text-scale, 1));
 }
 .log-row div {
   min-width: 0;
 }
 .log-row p {
   margin: 2px 0 0;
-  line-height: 19px;
+  line-height: calc(19px * var(--text-scale, 1));
   overflow-wrap: anywhere;
 }
 .event-type {
   color: #168f6c;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1));
   font-weight: 600;
 }
 .log-row.normal .event-type {
   color: var(--muted);
 }
 .log-empty {
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1));
   color: var(--muted);
   padding: 7px 0;
 }
 .panel-footer {
-  font-size: 8px;
+  font-size: calc(8px * var(--text-scale, 1));
   color: var(--muted);
   padding: 6px 12px;
   border-top: 1px solid var(--line);
@@ -447,7 +448,7 @@ button:hover {
 }
 .new-events,
 .load-more {
-  font-size: 9px;
+  font-size: calc(9px * var(--text-scale, 1));
   color: #168f6c;
   background: var(--hover);
   padding: 4px;
@@ -462,28 +463,28 @@ button:hover {
   color: var(--muted);
 }
 .empty-panel > span {
-  font-size: 30px;
+  font-size: calc(30px * var(--text-scale, 1));
 }
 .empty-panel p {
   margin: 6px;
 }
 .empty-panel small {
-  font-size: 9px;
+  font-size: calc(9px * var(--text-scale, 1));
 }
 .empty-panel button {
   padding: 5px;
   color: #168f6c;
 }
 .empty-copy {
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1));
 }
 .settings-title {
-  font-size: 12px;
+  font-size: calc(12px * var(--text-scale, 1));
   font-weight: 600;
 }
 .text-button {
   color: #168f6c;
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1));
   padding: 5px;
 }
 .settings-scroll {
@@ -495,7 +496,7 @@ button:hover {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1));
   margin-bottom: 10px;
 }
 .field select {
@@ -513,10 +514,10 @@ button:hover {
 .range-label {
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1));
 }
 .range-label strong {
-  font-size: 11px;
+  font-size: calc(11px * var(--text-scale, 1));
   color: #168f6c;
 }
 input[type='range'] {
@@ -526,17 +527,17 @@ input[type='range'] {
   margin: 4px 0;
 }
 .hint {
-  font-size: 9px;
+  font-size: calc(9px * var(--text-scale, 1));
   color: var(--muted);
   margin: 2px 0;
-  line-height: 15px;
+  line-height: calc(15px * var(--text-scale, 1));
 }
 .toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: 29px;
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1));
   border-bottom: 1px solid var(--line);
 }
 input[type='checkbox'] {
@@ -551,7 +552,7 @@ input[type='checkbox'] {
 }
 .inline-field select {
   min-width: 84px;
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1));
 }
 .event-filters {
   border: 1px solid var(--line);
@@ -561,11 +562,11 @@ input[type='checkbox'] {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
-  font-size: 9px;
+  font-size: calc(9px * var(--text-scale, 1));
 }
 .event-filters legend {
   color: var(--muted);
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1));
 }
 .event-filters label {
   display: flex;
@@ -580,7 +581,7 @@ input[type='checkbox'] {
   padding: 6px 8px;
   background: #fff2d8;
   color: #806014;
-  font-size: 10px;
+  font-size: calc(10px * var(--text-scale, 1));
   display: flex;
   justify-content: space-between;
   gap: 5px;

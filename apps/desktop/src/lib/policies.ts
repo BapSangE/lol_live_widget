@@ -23,6 +23,7 @@ export const defaultImportant: EventType[] = [
 export const defaults: UserSettings = {
   schemaVersion: 1,
   opacityPercent: 65,
+  fontScalePercent: 100,
   brightenOnHover: false,
   eventDisplaySeconds: 6,
   preferredMatchId: null,
@@ -65,11 +66,12 @@ export function geometry(
   expanded: boolean,
   area: Area,
   panelHeight = EXPANDED_HEIGHT,
+  compactHeight = COMPACT_HEIGHT,
 ) {
   const width = Math.min(COMPACT_WIDTH, area.width),
-    height = Math.min(expanded ? panelHeight : COMPACT_HEIGHT, area.height);
-  const upward = anchor.y + COMPACT_HEIGHT >= area.y + area.height * 0.6;
-  const y = expanded && upward ? anchor.y + COMPACT_HEIGHT - height : anchor.y;
+    height = Math.min(expanded ? panelHeight : compactHeight, area.height);
+  const upward = anchor.y + compactHeight >= area.y + area.height * 0.6;
+  const y = expanded && upward ? anchor.y + compactHeight - height : anchor.y;
   return {
     x: Math.max(area.x, Math.min(anchor.x, area.x + area.width - width)),
     y: Math.max(area.y, Math.min(y, area.y + area.height - height)),
@@ -81,7 +83,8 @@ export function validateSettings(raw: unknown): UserSettings {
   if (!raw || typeof raw !== 'object') return { ...defaults };
   const v = raw as Record<string, unknown>;
   if (v.schemaVersion !== undefined && v.schemaVersion !== 1) return { ...defaults };
-  const bool = (k: string, d: boolean) => (typeof v[k] === 'boolean' ? (v[k] as boolean) : d);
+  const bool = (k: string, d: boolean) =>
+    typeof v[k] === 'boolean' ? (v[k] as boolean) : d;
   const num = (k: string, min: number, max: number, step: number, d: number) =>
     typeof v[k] === 'number' &&
     Number.isFinite(v[k]) &&
@@ -94,11 +97,16 @@ export function validateSettings(raw: unknown): UserSettings {
   return {
     schemaVersion: 1,
     opacityPercent: num('opacityPercent', 10, 100, 5, 65),
+    fontScalePercent: [100, 120, 140].includes(v.fontScalePercent as number)
+      ? (v.fontScalePercent as UserSettings['fontScalePercent'])
+      : 100,
     brightenOnHover: bool('brightenOnHover', false),
     eventDisplaySeconds: num('eventDisplaySeconds', 3, 15, 1, 6),
     preferredMatchId: typeof v.preferredMatchId === 'string' ? v.preferredMatchId : null,
     importantTypes: Array.isArray(v.importantTypes)
-      ? v.importantTypes.filter((t): t is EventType => typeof t === 'string' && t in eventRank)
+      ? v.importantTypes.filter(
+          (t): t is EventType => typeof t === 'string' && t in eventRank,
+        )
       : [...defaultImportant],
     alwaysOnTop: bool('alwaysOnTop', true),
     launchAtLogin: bool('launchAtLogin', false),

@@ -9,6 +9,7 @@ export type EventsPage = components['schemas']['EventsPage'];
 export interface UserSettings {
   schemaVersion: 1;
   opacityPercent: number;
+  fontScalePercent: 100 | 120 | 140;
   brightenOnHover: boolean;
   eventDisplaySeconds: number;
   preferredMatchId: string | null;
@@ -16,5 +17,10 @@ export interface UserSettings {
   alwaysOnTop: boolean;
   launchAtLogin: boolean;
   theme: 'light' | 'dark' | 'system';
-  widgetPosition: { monitorKey: string | null; x: number; y: number; anchor?: 'compact' } | null;
+  widgetPosition: {
+    monitorKey: string | null;
+    x: number;
+    y: number;
+    anchor?: 'compact';
+  } | null;
 }
