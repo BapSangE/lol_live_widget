@@ -19,7 +19,11 @@ def test_embedded_server_owns_dynamic_loopback_port_and_stops(monkeypatch):
         assert (
             httpx.get(origin + "/api/v1/matches").json()[0]["matchId"] == "demo-worlds"
         )
-    with pytest.raises(httpx.ConnectError):
+    assert not server.thread.is_alive()
+    assert server.socket.fileno() == -1
+    # Windows may silently drop a connection to a closed port instead of
+    # immediately refusing it; both confirm the stopped server is unreachable.
+    with pytest.raises((httpx.ConnectError, httpx.ConnectTimeout)):
         httpx.get(origin + "/api/v1/health", timeout=0.2)
 
 
