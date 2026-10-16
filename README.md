@@ -1,34 +1,101 @@
+<div align="center">
+
 # LoL Live Widget
 
-Windows 10/11용 LoL e스포츠 스코어 위젯입니다. 화면 위에 작은 창을 띄워 경기 스코어와 최근 기록을 표시합니다. Tauri 2 + React UI와 FastAPI 수집기로 구성됩니다.
+**경기를 놓치지 않는 작은 스코어보드**
 
-**현재 단계: 0.1.0 1차 마무리 (2026-10-16).** Windows x64 무설치 EXE 빌드와 내장 서버 검사를 통과했고, 사용자가 실제 Windows에서 실행되는 것을 확인했습니다. 진행 중 경기의 연속 수신과 세트 전환은 실제 라이브 시간에 추가 검증이 필요합니다.
+다른 작업을 하는 동안에도 LoL e스포츠 스코어와 최근 경기 기록을 화면 위에서 확인하세요.
 
-## Windows에서 사용하기
+![Windows x64](https://img.shields.io/badge/Windows_10%2F11-x64-0078D4?style=flat-square)
+![macOS Apple Silicon](https://img.shields.io/badge/macOS-Apple_Silicon-333333?style=flat-square)
+![Version](https://img.shields.io/badge/version-0.1.0-2f8f73?style=flat-square)
 
-1. `LoL-Live-Widget.exe` 하나를 Windows PC에 복사합니다.
-2. 더블 클릭하면 위젯과 내장 수집 서버가 함께 실행됩니다. Python·Node.js·Rust·별도 서버 설치나 API 키 입력은 필요 없습니다.
-3. 위젯을 클릭하면 상세 기록을 펼칩니다. Esc로 접고, X 또는 트레이 메뉴의 종료로 앱을 종료합니다.
+[시작하기](#시작하기) · [화면 미리보기](#화면-미리보기) · [개발하기](#개발하기) · [검증 현황](#검증-현황)
 
-기본 데이터는 Worlds 공개 비공식 공급원입니다. 인터넷 연결이 필요하며, 진행 중 경기가 없으면 `경기 대기`와 다음 일정을 표시하고 60초마다 경기를 찾습니다. WebView2가 없는 PC에서는 처음 한 번 설치 안내가 나옵니다.
+</div>
 
-산출물은 `dist/LoL-Live-Widget.exe`입니다. GitHub Actions의 [Windows portable 빌드](https://github.com/BapSangE/lol_live_widget/actions/workflows/windows-portable.yml)에서 artifact ZIP을 받았다면 압축을 풀고 EXE만 사용하면 됩니다. 자동 업데이트와 앱 코드 서명은 포함하지 않습니다.
+## 화면 미리보기
 
-실행 오류 로그는 `%LOCALAPPDATA%\LoLLiveWidget\portable.log`에 남습니다. 설정은 앱 설정 폴더의 `settings.json`에 저장합니다. 상세 구성·빌드·문제 확인 방법은 [Windows 무설치 안내](docs/windows_portable.md)를 참고하세요.
+작게 접어 두고, 필요한 순간 클릭해 경기 기록을 펼칩니다.
 
-## 주요 동작
+<p align="center">
+  <img src="docs/images/widget-compact.jpg" alt="최소화 위젯: 상태와 최신 기록 한 줄" width="350">
+</p>
 
-- 최소화 350×62: 스코어와 현재 세트의 최신 기록 한 줄을 표시합니다. 긴 문구는 말줄임표와 툴팁을 사용합니다.
-- 확장 350×400: 최소화와 같은 폭이며, 일반적인 기록 두 건을 볼 수 있도록 기록 영역을 최소 120px 확보합니다. 작은 화면에서는 내부 스크롤을 사용합니다.
-- 글자 크기: 설정에서 기본(100%)·크게(120%)·아주 크게(140%)를 선택하며 즉시 반영하고 재실행 후에도 유지합니다. 가로 폭은 350px로 유지하고 창 높이와 줄 높이를 함께 늘립니다. 기존 설정은 100%로 복원합니다.
-- 설정 기본 350×300: 불투명도, 항상 위, 자동 실행 등을 변경합니다. 기본 불투명도는 65%, 자동 실행은 OFF입니다.
-- 손잡이로 이동하며 트레이에서 숨기기·복원·경기 선택·설정·종료를 할 수 있습니다. 중요 사건은 6초간 표시하고 기본 무음입니다.
-- X는 모든 모드에서 표시됩니다. 웹 미리보기에서는 수신을 멈추고 종료 화면을 표시하며 `다시 열기`로 복귀합니다.
-- 모의 데이터는 `DEMO`, 과거 경기 재생은 `REPLAY`로 구분합니다. 과거 재생은 종료 후 자동 반복하지 않습니다.
+<table>
+  <tr>
+    <th>확장 화면</th>
+    <th>설정 화면</th>
+  </tr>
+  <tr>
+    <td valign="top"><img src="docs/images/widget-expanded.jpg" alt="확장 위젯: 경기 정보와 기록 영역" width="350"></td>
+    <td valign="top"><img src="docs/images/widget-settings.jpg" alt="설정: 글자 크기, 불투명도, 항상 위, 자동 실행" width="350"></td>
+  </tr>
+</table>
 
-## 개발 환경
+*macOS 앱에서 직접 촬영한 라이트 테마 화면입니다. 촬영 당시 진행 중인 경기가 없어 대기 상태를 표시합니다. 설정 화면은 스크롤 영역의 상단입니다.*
 
-Node.js 22+, Python 3.12+, Rust stable이 필요합니다. Windows 네이티브 개발에는 Microsoft C++ Build Tools와 WebView2도 필요합니다.
+## 주요 기능
+
+| 기능 | 동작 |
+| --- | --- |
+| 작은 스코어보드 | 최소화 상태에서도 스코어와 최신 경기 기록 한 줄 표시 |
+| 펼쳐 보는 경기 기록 | 같은 가로 폭으로 확장하며 일반적인 기록 두 건을 볼 공간 확보 |
+| 글자 크기 조절 | 기본 **100%** · 크게 **120%** · 아주 크게 **140%**, 재실행 후에도 유지 |
+| 화면 위에 고정 | 항상 위, 드래그 이동, 전체 불투명도와 호버 불투명도 설정 |
+| 조용한 이벤트 알림 | 중요한 사건을 기본 6초 동안 표시하며 무음으로 동작 |
+| 간편한 실행 | 앱에 수집기 포함, 별도 Python·Node.js·서버·API 키 설치 불필요 |
+
+기본 폭은 모든 모드 **350px**입니다. 100% 기준 최소화/확장/설정 높이는 62/400/300px이며, 글자를 키우면 창 높이와 줄 높이도 함께 늘어납니다. 작은 화면에서는 높이를 제한하고 내부 스크롤을 사용합니다.
+
+## 시작하기
+
+| 플랫폼 | 전달할 파일 | 실행 방법 |
+| --- | --- | --- |
+| Windows 10/11 x64 | `LoL-Live-Widget.exe` | 파일 하나를 복사해 더블 클릭 |
+| macOS Apple Silicon | `LoL Live Widget_0.1.0_aarch64.dmg` | DMG를 열고 앱을 Applications로 옮겨 실행 |
+
+### Windows
+
+1. [Windows portable 빌드](https://github.com/BapSangE/lol_live_widget/actions/workflows/windows-portable.yml)의 성공한 실행에서 artifact ZIP을 받습니다.
+2. 압축을 풀고 **`LoL-Live-Widget.exe`만** 실행합니다. WebView2가 없으면 처음 한 번 설치 안내가 나옵니다.
+3. 위젯을 클릭하면 펼쳐지고, **Esc**로 접습니다. **X** 또는 트레이 메뉴의 **종료**로 앱과 수집기를 함께 종료합니다.
+
+로컬 빌드 산출물은 `dist/LoL-Live-Widget.exe`입니다. [Windows 사용·빌드 안내 →](docs/windows_portable.md)
+
+### macOS
+
+1. 전달받은 DMG를 열고 **LoL Live Widget.app**을 **Applications** 폴더로 옮깁니다.
+2. 앱을 실행하면 위젯과 수집기가 함께 시작됩니다. 별도 런타임 설치는 필요 없습니다.
+3. 확인되지 않은 개발자 경고가 뜨면 앱의 출처를 확인한 뒤 Finder의 **우클릭 → 열기**, 또는 macOS **개인정보 보호 및 보안 → 확인 없이 열기** 안내를 따릅니다.
+
+현재 DMG는 로컬 빌드로 생성하며, 저장소의 Release에 게시하지 않았습니다. **Apple Silicon용**이며 Intel Mac은 별도 빌드가 필요합니다. [macOS 사용·빌드 안내 →](docs/macos_portable.md)
+
+> 인터넷 연결이 필요합니다. 기본 공급원은 **Worlds 공개 비공식 피드**이며, 진행 중인 경기가 없으면 `경기 대기`와 다음 일정을 표시합니다. 현재 배포본에는 자동 업데이트와 Developer ID 서명·공증이 포함되지 않습니다.
+
+### 설정과 로그
+
+설정에서 글자 크기·불투명도·항상 위·자동 실행·표시 이벤트를 변경할 수 있습니다. 기본 불투명도는 65%, 자동 실행은 OFF입니다. 메뉴는 Windows 트레이 또는 macOS 메뉴 막대에서도 열 수 있습니다.
+
+| 항목 | Windows | macOS |
+| --- | --- | --- |
+| 실행 로그 | `%LOCALAPPDATA%\LoLLiveWidget\portable.log` | `~/Library/Logs/LoLLiveWidget/portable.log` |
+| 설정 | 앱 설정 폴더의 `settings.json` | `~/Library/Application Support/com.lollive.widget/settings.json` |
+
+## 데이터와 검증 범위
+
+공개 일정 페이지의 경기 JSON과 `feed.lolesports.com` 통계 피드를 읽는 **개인용 비공식 클라이언트**입니다. 기본 경로는 API 키를 읽거나 전송하지 않습니다. 공개 페이지 형식이나 접근 정책이 바뀌면 수집이 중단될 수 있습니다.
+
+- **확인 완료:** 공개 일정·과거 경기 feed 응답, 실제 LCK 샘플 재생, Windows와 macOS에서 사용자 실행 확인.
+- **추가 확인 필요:** 진행 중 경기의 연속 수신 → 스코어·기록 갱신 → 세트 전환 → 종료까지의 전체 흐름.
+- 일정 캐시로 경기 발견이 늦을 수 있으며, 통계는 현재 시각보다 약 20초 전까지 조회합니다. 이 수치는 방송 대비 실측 지연이 아닙니다.
+- 공급원이 제공하지 않는 값은 `null`로 처리합니다. 모의 데이터는 `DEMO`, 과거 경기 재생은 `REPLAY`로 표시합니다.
+
+[공개 공급원 검증 기록](docs/unofficial_live_validation.md) · [LCK 실제 캡처 검증](docs/lck_2026_capture_test.md)
+
+## 개발하기
+
+**Tauri 2 + React + TypeScript** UI와 **FastAPI** 수집기로 구성됩니다. Node.js 22+, Python 3.12+, Rust stable이 필요합니다. Windows는 Microsoft C++ Build Tools와 WebView2, macOS는 Xcode Command Line Tools도 필요합니다.
 
 ```sh
 npm --prefix apps/desktop ci
@@ -38,49 +105,30 @@ python -m venv .venv
 python -m pip install -e 'apps/server[test]'
 ```
 
-아래 명령은 저장소 루트에서 가상환경을 활성화한 뒤 실행합니다. 이 작업 공간의 기존 가상환경은 `.venv312`입니다.
+이후 명령은 저장소 루트에서 가상환경을 활성화한 뒤 실행합니다. 이 작업공간의 기존 가상환경과 macOS 패키징 스크립트는 `.venv312`를 사용합니다.
 
-### 공개 라이브 미리보기
+| 목적 | 명령 |
+| --- | --- |
+| Worlds 공개 라이브 미리보기 | `python scripts/run_live.py` |
+| LCK 공개 라이브 미리보기 | `python scripts/run_live.py --league lck` |
+| 다운로드한 실제 LCK 샘플 재생 | `python scripts/run_lck_replay.py` |
+| 서버 없는 모의 데이터 UI | `npm --prefix apps/desktop run dev` |
+| Tauri 네이티브 개발 | `npm --prefix apps/desktop run tauri -- dev` |
 
-```sh
-python scripts/run_live.py
-# LCK 선택: python scripts/run_live.py --league lck
-```
+미리보기는 [http://127.0.0.1:1420](http://127.0.0.1:1420)에서 열립니다. 공개 라이브·리플레이 런처는 수집기와 UI 개발 서버를 함께 실행하며 **Ctrl+C**로 종료합니다. 8000·1420 포트를 사용하므로 이전 실행을 먼저 종료하세요. macOS에서는 `라이브 위젯 실행.command`와 `LCK 리플레이 실행.command`도 사용할 수 있습니다.
 
-브라우저에서 http://127.0.0.1:1420 을 엽니다. macOS에서는 `라이브 위젯 실행.command`도 사용할 수 있습니다. Ctrl+C로 UI 개발 서버와 수집기를 함께 종료합니다. 미리보기 실행은 8000·1420 포트를 사용하므로 이전 실행을 먼저 종료하세요.
+<details>
+<summary><strong>데이터 모드와 리플레이 상세</strong></summary>
 
-### 다운로드한 실제 LCK 경기 재생
+일반 개발 UI와 Tauri 기본 실행은 모의 데이터입니다. 서버 연결은 `apps/desktop/.env.local`의 `VITE_SERVER_URL=http://127.0.0.1:8000`으로 지정합니다. 공개 라이브 런처와 portable 앱은 연결 설정을 자동으로 전달합니다.
 
-```sh
-python scripts/run_lck_replay.py
-```
+LCK 샘플은 GEN–HLE 2026-09-13 1세트의 약 69초를 원래 간격으로 재생합니다. 킬 스코어는 3:3에서 4:4로 바뀝니다. 전체 경기 녹화가 아니며 원본에 없는 게임 시계는 `--:--`로 표시합니다. 종료 후 마지막 통계와 `재생 구간 종료`를 유지하며 자동 반복하지 않습니다. 처음부터 보려면 런처를 다시 실행하세요. 재생 중에는 외부 요청이나 API 키가 필요 없습니다.
 
-macOS의 `LCK 리플레이 실행.command`도 같은 작업을 수행합니다. GEN–HLE 2026-09-13 1세트의 약 69초 샘플을 원래 간격으로 재생하며 킬 스코어가 3:3에서 4:4로 바뀝니다. 전체 경기 녹화가 아니며 게임 시계는 원본에 없어 `--:--`로 표시합니다. 재생 중에는 외부 요청이나 API 키가 필요 없습니다.
+독립 라이브 서버 설정은 `SOURCE_MODE=live`, `SOURCE_APPROVED=true`, `LIVE_PROVIDER=public`, `LIVE_LEAGUES=worlds`입니다. 선택 가능한 기존 persisted 어댑터는 `LIVE_PROVIDER=persisted`와 해당 API용 `LOLESPORTS_API_KEY`가 필요하며, `RGAPI-` Riot Developer 키와는 호환되지 않습니다.
 
-종료 후 마지막 통계를 유지하고 `재생 구간 종료`를 표시합니다. 처음부터 다시 보려면 Ctrl+C 후 명령을 다시 실행합니다. 브라우저 새로고침은 서버의 현재 위치에 연결합니다. 이 명령은 과거 경기 전용이며 라이브 경기로 자동 전환하지 않습니다. 원본과 검증 기록은 [LCK 캡처 검증](docs/lck_2026_capture_test.md)에 있습니다.
+</details>
 
-### UI만 확인 / 네이티브 개발
-
-```sh
-# 서버 없는 내장 모의 데이터 UI
-npm --prefix apps/desktop run dev
-
-# Tauri 네이티브 앱
-npm --prefix apps/desktop run tauri -- dev
-```
-
-일반 개발 UI와 Tauri의 기본 실행은 모의 데이터입니다. 서버에 연결하려면 `apps/desktop/.env.local`에 `VITE_SERVER_URL=http://127.0.0.1:8000`을 지정한 뒤 개발 서버를 다시 실행합니다. `.env.example`은 참고용입니다. 공개 라이브 런처와 Windows portable은 필요한 연결 설정을 자동으로 전달합니다.
-
-## 데이터 공급원과 제한
-
-기본 라이브 경로는 공개 일정 HTML의 `ApolloSSRDataTransport` 경기 JSON과 `feed.lolesports.com`의 통계 feed를 읽습니다. 웹페이지 JavaScript를 실행하거나 다른 저장소의 키를 복사하지 않습니다. 공식 API 접근 승인을 기다리지 않고 사용하는 개인용 비공식 경로이며, 공개 페이지 형식·접근 정책 변경으로 수집이 중단될 수 있습니다.
-
-- 독립 서버: `SOURCE_MODE=live`, `SOURCE_APPROVED=true`, `LIVE_PROVIDER=public`, `LIVE_LEAGUES=worlds`. 공개 경로는 API 키를 읽거나 전송하지 않습니다.
-- 기존 persisted 어댑터는 선택 사항입니다. `LIVE_PROVIDER=persisted`와 해당 API용 `LOLESPORTS_API_KEY`가 필요하며 `RGAPI-` Riot Developer 키는 호환되지 않습니다.
-- 일정 캐시로 경기 발견·세트 전환이 늦을 수 있습니다. 통계는 현재 시각보다 약 20초 전까지 조회하며, 이는 방송 대비 실측 지연이 아닙니다. 제공되지 않는 값은 `null`로 취급합니다.
-- 공개 일정과 과거 경기 feed는 실제 응답으로 확인했습니다. **진행 중 경기의 지속 수신·종료·다음 세트 전환은 아직 미검증입니다.** [공개 공급원 검증 기록](docs/unofficial_live_validation.md)을 참고하세요.
-
-## 검사와 빌드
+### 검사와 패키징
 
 ```sh
 python -m pytest apps/server/tests
@@ -90,16 +138,25 @@ npm --prefix apps/desktop run build
 cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml
 ```
 
-Windows x64에서 단일 EXE를 생성합니다.
+| 대상 | 빌드 명령 | 상세 안내 |
+| --- | --- | --- |
+| Windows x64 EXE | `python scripts/build_windows_portable.py` | [필수 의존성과 산출물](docs/windows_portable.md) |
+| macOS arm64 APP + DMG | `python scripts/build_macos_portable.py` | [필수 의존성과 산출물](docs/macos_portable.md) |
 
-```powershell
-python -m pip install "pyinstaller>=6.10,<7"
-python scripts/build_windows_portable.py
+패키징에는 `pyinstaller>=6.10,<7`이 추가로 필요하며, 각각 해당 OS에서 빌드합니다. Windows EXE의 `--demo`는 오프라인 UI, `--smoke-test`는 내장 서버 검사입니다.
+
+<details>
+<summary><strong>서버 운영 · NSIS · API 계약 생성</strong></summary>
+
+별도 서버용 Windows NSIS 클라이언트는 `npm --prefix apps/desktop run tauri -- build`로 생성합니다. 서버 origin을 빌드 시 `VITE_SERVER_URL`로 지정하면 CSP에 반영됩니다. 결과는 `apps/desktop/src-tauri/target/release/bundle/nsis/`에 생성됩니다.
+
+독립 서버는 아래 명령으로 실행합니다. 기본 데이터는 모의 데이터이며, 설정은 환경변수 또는 uvicorn `--env-file`로 전달합니다.
+
+```sh
+python -m uvicorn app.main:app --app-dir apps/server --host 127.0.0.1 --port 8000
 ```
 
-의존성 설치가 선행되어야 합니다. 산출물은 `dist/LoL-Live-Widget.exe`이며 `--demo`로 오프라인 UI, `--smoke-test`로 내장 서버를 검사할 수 있습니다. [Windows 빌드 상세](docs/windows_portable.md)를 참고하세요.
-
-별도 서버에 연결하는 NSIS 설치형 클라이언트도 `npm --prefix apps/desktop run tauri -- build`로 빌드할 수 있습니다. 서버 origin은 빌드 시 `VITE_SERVER_URL`로 지정하며 CSP에 반영됩니다. 결과는 `apps/desktop/src-tauri/target/release/bundle/nsis/`에 생성됩니다. 단일 EXE 전달에는 portable 빌드를 사용합니다.
+메모리 저장소이므로 worker는 1개만 사용합니다. 서버 재시작 시 로그와 revision이 초기화되고 클라이언트는 새 epoch로 재동기화합니다. 외부 배포는 HTTPS reverse proxy를 사용하고 SSE 버퍼링을 끄며 idle timeout을 heartbeat 15초보다 길게 설정합니다. Docker 빌드 명령은 `docker build -f apps/server/Dockerfile -t lol-widget-server .`입니다.
 
 API 계약을 변경했다면 함께 재생성합니다.
 
@@ -108,24 +165,20 @@ python scripts/export_contract.py
 npm --prefix apps/desktop run generate:contracts
 ```
 
-## 저장소와 서버 운영
+</details>
+
+## 검증 현황
+
+**0.1.0 · Windows x64 / macOS Apple Silicon 실행 확인**
+
+기본 실행은 두 플랫폼에서 사용자가 확인했습니다. 실제 라이브 경기 전체 흐름, 자동 실행 ON/OFF, 재실행 설정 유지, Windows DPI 125/150/200%, 다중 모니터, WebView2 없는 새 PC는 추가 수용 검증 대상입니다.
 
 | 경로 | 역할 |
 | --- | --- |
-| `apps/desktop` | React UI와 Tauri Windows shell |
-| `apps/server` | 공급원, 이벤트 감지, 메모리 저장소, REST/SSE |
-| `scripts` | 라이브·리플레이 실행과 Windows 패키징 |
+| `apps/desktop` | React UI와 Windows/macOS Tauri 앱 |
+| `apps/server` | 데이터 공급원, 이벤트 감지, 메모리 저장소, REST/SSE |
+| `scripts` | 라이브·리플레이 런처와 OS별 패키징 |
 | `fixtures` | 모의 데이터와 출처를 기록한 실제 경기 샘플 |
-| `docs` | 계약, 설계, 검증 기록과 남은 테스트 |
+| `docs` | 화면 이미지, 사용법, 계약, 설계와 검증 기록 |
 
-독립 서버는 `python -m uvicorn app.main:app --app-dir apps/server --host 127.0.0.1 --port 8000`으로 실행합니다. 설정은 환경변수 또는 uvicorn `--env-file`로 전달합니다. 기본은 모의 데이터입니다.
-
-저장소가 메모리 기반이므로 worker는 1개만 사용합니다. 서버 재시작 시 로그와 revision이 초기화되며 클라이언트는 새 epoch로 재동기화합니다. 외부 배포에는 HTTPS reverse proxy를 사용하고 SSE 버퍼링을 끄며 idle timeout을 heartbeat 15초보다 길게 설정합니다. Docker 빌드는 `docker build -f apps/server/Dockerfile -t lol-widget-server .`입니다.
-
-## 다음 확인 사항
-
-1. 실제 라이브 시간에 경기 발견 → 스코어·기록 갱신 → 세트 전환 → 종료 흐름 확인.
-2. Windows에서 X·트레이 종료, 설정 재시작 유지, 자동 실행 ON/OFF 확인.
-3. DPI 125/150/200%, 다중 모니터, WebView2 없는 PC 확인.
-
-[현재 상태·변경 기록](docs/progress.md) · [수용 테스트](docs/test_plan.md) · [구현 명세](docs/implementation_spec.md) · [구현 계획](docs/implementation_plan.md) · [API 계약](docs/api_contract.md)
+[변경 기록](docs/progress.md) · [수용 테스트](docs/test_plan.md) · [구현 명세](docs/implementation_spec.md) · [구현 계획](docs/implementation_plan.md) · [API 계약](docs/api_contract.md)

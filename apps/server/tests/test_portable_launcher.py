@@ -39,3 +39,31 @@ def test_frozen_replay_uses_bundled_fixture_root(monkeypatch, tmp_path):
     monkeypatch.setattr(sys, "_MEIPASS", str(tmp_path), raising=False)
     monkeypatch.delenv("REPLAY_FIXTURE", raising=False)
     assert ReplayProvider().frames[0].match_id == "bundled-fixture"
+
+
+def test_macos_server_mode_publishes_origin_and_stops_cleanly(tmp_path):
+    import threading
+
+    from scripts.portable_launcher import serve_embedded_server
+
+    port_file = tmp_path / "collector.port"
+    stop = threading.Event()
+    thread = threading.Thread(
+        target=serve_embedded_server, args=(port_file, stop), daemon=True
+    )
+    thread.start()
+    try:
+        for _ in range(100):
+            if port_file.exists():
+                break
+            threading.Event().wait(0.05)
+        origin = port_file.read_text()
+        assert origin.startswith("http://127.0.0.1:")
+        assert (
+            httpx.get(origin + "/api/v1/health", timeout=5).json()["sourceMode"]
+            == "live"
+        )
+    finally:
+        stop.set()
+        thread.join(timeout=5)
+    assert not thread.is_alive()
