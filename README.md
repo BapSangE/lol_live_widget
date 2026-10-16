@@ -10,9 +10,20 @@
 ![macOS Apple Silicon](https://img.shields.io/badge/macOS-Apple_Silicon-333333?style=flat-square)
 ![Version](https://img.shields.io/badge/version-0.1.0-2f8f73?style=flat-square)
 
-[시작하기](#시작하기) · [화면 미리보기](#화면-미리보기) · [개발하기](#개발하기) · [검증 현황](#검증-현황)
+[다운로드](#다운로드) · [시작하기](#시작하기) · [화면 미리보기](#화면-미리보기) · [개발하기](#개발하기) · [검증 현황](#검증-현황)
 
 </div>
+
+## 다운로드
+
+**설치 도구나 API 키 없이 파일을 받아 바로 실행하세요.**
+
+[![Windows 다운로드](https://img.shields.io/badge/다운로드-Windows_x64_EXE-0078D4?style=for-the-badge&logo=windows)](https://github.com/BapSangE/lol_live_widget/releases/latest/download/LoL-Live-Widget.exe)
+[![macOS 다운로드](https://img.shields.io/badge/다운로드-macOS_Apple_Silicon_DMG-333333?style=for-the-badge&logo=apple)](https://github.com/BapSangE/lol_live_widget/releases/latest/download/LoL-Live-Widget-macOS-arm64.dmg)
+
+[최신 릴리스·변경 내용·SHA-256 확인 →](https://github.com/BapSangE/lol_live_widget/releases/latest)
+
+Windows는 EXE를 더블 클릭하고, Mac은 DMG 안의 앱을 Applications로 복사해 실행하세요. macOS **Intel은 지원하지 않습니다.** 소스 코드 ZIP은 개발자용이며, 일반 사용자는 위 두 파일 중 자신의 OS에 맞는 파일을 받으면 됩니다.
 
 ## 화면 미리보기
 
@@ -53,12 +64,12 @@
 | 플랫폼 | 전달할 파일 | 실행 방법 |
 | --- | --- | --- |
 | Windows 10/11 x64 | `LoL-Live-Widget.exe` | 파일 하나를 복사해 더블 클릭 |
-| macOS Apple Silicon | `LoL Live Widget_0.1.0_aarch64.dmg` | DMG를 열고 앱을 Applications로 옮겨 실행 |
+| macOS Apple Silicon | `LoL-Live-Widget-macOS-arm64.dmg` | DMG를 열고 앱을 Applications로 옮겨 실행 |
 
 ### Windows
 
-1. [Windows portable 빌드](https://github.com/BapSangE/lol_live_widget/actions/workflows/windows-portable.yml)의 성공한 실행에서 artifact ZIP을 받습니다.
-2. 압축을 풀고 **`LoL-Live-Widget.exe`만** 실행합니다. WebView2가 없으면 처음 한 번 설치 안내가 나옵니다.
+1. [Windows 실행 파일](https://github.com/BapSangE/lol_live_widget/releases/latest/download/LoL-Live-Widget.exe)을 받습니다.
+2. **`LoL-Live-Widget.exe`를 더블 클릭**합니다. WebView2가 없으면 처음 한 번 설치 안내가 나옵니다.
 3. 위젯을 클릭하면 펼쳐지고, **Esc**로 접습니다. **X** 또는 트레이 메뉴의 **종료**로 앱과 수집기를 함께 종료합니다.
 
 로컬 빌드 산출물은 `dist/LoL-Live-Widget.exe`입니다. [Windows 사용·빌드 안내 →](docs/windows_portable.md)
@@ -69,7 +80,7 @@
 2. 앱을 실행하면 위젯과 수집기가 함께 시작됩니다. 별도 런타임 설치는 필요 없습니다.
 3. 확인되지 않은 개발자 경고가 뜨면 앱의 출처를 확인한 뒤 Finder의 **우클릭 → 열기**, 또는 macOS **개인정보 보호 및 보안 → 확인 없이 열기** 안내를 따릅니다.
 
-현재 DMG는 로컬 빌드로 생성하며, 저장소의 Release에 게시하지 않았습니다. **Apple Silicon용**이며 Intel Mac은 별도 빌드가 필요합니다. [macOS 사용·빌드 안내 →](docs/macos_portable.md)
+[macOS DMG 다운로드](https://github.com/BapSangE/lol_live_widget/releases/latest/download/LoL-Live-Widget-macOS-arm64.dmg). **Apple Silicon용**이며 Intel Mac은 별도 빌드가 필요합니다. [macOS 사용·빌드 안내 →](docs/macos_portable.md)
 
 > 인터넷 연결이 필요합니다. 기본 공급원은 **Worlds 공개 비공식 피드**이며, 진행 중인 경기가 없으면 `경기 대기`와 다음 일정을 표시합니다. 현재 배포본에는 자동 업데이트와 Developer ID 서명·공증이 포함되지 않습니다.
 
@@ -115,7 +126,7 @@ python -m pip install -e 'apps/server[test]'
 | 서버 없는 모의 데이터 UI | `npm --prefix apps/desktop run dev` |
 | Tauri 네이티브 개발 | `npm --prefix apps/desktop run tauri -- dev` |
 
-미리보기는 [http://127.0.0.1:1420](http://127.0.0.1:1420)에서 열립니다. 공개 라이브·리플레이 런처는 수집기와 UI 개발 서버를 함께 실행하며 **Ctrl+C**로 종료합니다. 8000·1420 포트를 사용하므로 이전 실행을 먼저 종료하세요. macOS에서는 `라이브 위젯 실행.command`와 `LCK 리플레이 실행.command`도 사용할 수 있습니다.
+미리보기는 [http://127.0.0.1:1420](http://127.0.0.1:1420)에서 열립니다. 공개 라이브·리플레이 런처는 수집기와 UI 개발 서버를 함께 실행하며 **Ctrl+C**로 종료합니다. 8000·1420 포트를 사용하므로 이전 실행을 먼저 종료하세요.
 
 <details>
 <summary><strong>데이터 모드와 리플레이 상세</strong></summary>

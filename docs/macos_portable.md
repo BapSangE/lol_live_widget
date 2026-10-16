@@ -1,5 +1,7 @@
 # macOS 무설치 앱
 
+[macOS Apple Silicon DMG 다운로드](https://github.com/BapSangE/lol_live_widget/releases/latest/download/LoL-Live-Widget-macOS-arm64.dmg) · [릴리스 안내](https://github.com/BapSangE/lol_live_widget/releases/latest)
+
 Apple Silicon(arm64)에서 `LoL Live Widget.app`과 전달용 단일 DMG를 빌드합니다. 앱 번들 안에 공개 피드 수집기가 들어 있어 Python, Node.js, Rust, 별도 API 키 없이 실행됩니다. 앱이 닫히면 수집기도 함께 종료됩니다.
 
 사용자 Mac에서 앱 실행을 확인했습니다. 실제 진행 중 경기의 연속 수신·세트 전환은 추가 검증 대상입니다.

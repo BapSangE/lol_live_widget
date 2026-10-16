@@ -1,5 +1,7 @@
 # Windows 무설치 실행 파일
 
+[Windows EXE 다운로드](https://github.com/BapSangE/lol_live_widget/releases/latest/download/LoL-Live-Widget.exe) · [릴리스 안내](https://github.com/BapSangE/lol_live_widget/releases/latest)
+
 **2026-10-16 1차 완료:** Windows CI 빌드·frozen 서버 검사 통과, 사용자 Windows PC 실행 확인. 실제 라이브 수신과 세부 창 동작은 [수용 테스트](test_plan.md)에서 별도 확인한다.
 
 산출물은 `LoL-Live-Widget.exe` 한 개다. 사용자는 Node.js, Python, Rust나 별도 수집 서버를 설치하지 않는다. EXE를 더블 클릭하면 로컬 공개 데이터 수집기와 위젯을 함께 시작하고, 위젯의 X 또는 트레이 종료로 둘 다 종료한다.

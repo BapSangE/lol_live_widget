@@ -1,5 +1,12 @@
 # LoL Live Widget — 1차 완료 및 검증 기록
 
+## 2026-10-16 첫 GitHub Release 배포 정리
+
+- 루트의 개발용 `.command` 런처 2개를 제거함. 공개 라이브/실제 경기 샘플 재현은 `scripts/run_live.py`, `scripts/run_lck_replay.py`로 유지함.
+- README 상단에 Windows EXE·macOS arm64 DMG 직접 다운로드와 릴리스 링크를 추가함. Actions artifact 다운로드는 일반 사용자 사용 경로에서 제외함.
+- Windows는 소스 `74dc522`의 성공한 [portable CI 빌드](https://github.com/BapSangE/lol_live_widget/actions/runs/38860073574) 산출물, Mac은 사용자 실행 확인을 마친 동일 기능의 로컬 DMG를 배포 대상으로 준비함.
+- 배포 파일은 Git 저장소에 직접 넣지 않고 GitHub Release assets에 올리며, SHA-256 목록을 함께 제공함.
+
 ## 2026-10-16 macOS 앱 패키징 및 문서 정리
 
 - Apple Silicon용 `.app`과 전달용 단일 `.dmg` 생성. 공개 피드 수집기를 앱 Resources에 포함하며 별도 런타임이나 API 키 없이 실행함.
