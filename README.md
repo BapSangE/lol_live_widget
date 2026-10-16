@@ -81,6 +81,8 @@ Windows는 EXE를 더블 클릭하고, Mac은 DMG 안의 앱을 Applications로 
 2. 앱을 실행하면 위젯과 수집기가 함께 시작됩니다. 별도 런타임 설치는 필요 없습니다.
 3. 확인되지 않은 개발자 경고가 뜨면 앱의 출처를 확인한 뒤 Finder의 **우클릭 → 열기**, 또는 macOS **개인정보 보호 및 보안 → 확인 없이 열기** 안내를 따릅니다.
 
+기존 v0.2.0 Mac 파일에서 **“손상되었기 때문에 열 수 없습니다”**가 표시되면 최신 DMG를 다시 받아 앱을 교체하세요. `v0.2.0-macos.1`에서 앱 번들의 ad-hoc 서명을 수정했습니다. Apple 공증은 받지 않아 첫 실행 시 보안 허용은 필요할 수 있습니다.
+
 [macOS DMG 다운로드](https://github.com/BapSangE/lol_live_widget/releases/latest/download/LoL-Live-Widget-macOS-arm64.dmg). **Apple Silicon용**이며 Intel Mac은 별도 빌드가 필요합니다. [macOS 사용·빌드 안내 →](docs/macos_portable.md)
 
 > 인터넷 연결이 필요합니다. 기본 공급원은 **Worlds 공개 비공식 피드**이며, 진행 중인 경기가 없으면 `경기 대기`와 다음 일정을 표시합니다. 현재 배포본에는 자동 업데이트와 Developer ID 서명·공증이 포함되지 않습니다.

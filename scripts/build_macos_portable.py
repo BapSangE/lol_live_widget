@@ -125,13 +125,27 @@ def main() -> None:
             "aarch64-apple-darwin",
             "--bundles",
             "app,dmg",
-            "--no-sign",
             "--config",
             "src-tauri/tauri.macos-portable.conf.json",
         ],
         cwd=DESKTOP,
         env=env,
     )
+    # A linker-only signature can launch locally but fails after downloading.
+    # Reject a broken bundle before publishing its DMG.
+    bundle = TAURI / "target/aarch64-apple-darwin/release/bundle"
+    run(
+        [
+            "codesign",
+            "--verify",
+            "--deep",
+            "--strict",
+            "--verbose=4",
+            str(bundle / "macos/LoL Live Widget.app"),
+        ]
+    )
+    for dmg in (bundle / "dmg").glob("*.dmg"):
+        run(["hdiutil", "verify", str(dmg)])
     print(
         f"DMG: {TAURI / 'target/aarch64-apple-darwin/release/bundle/dmg'}", flush=True
     )

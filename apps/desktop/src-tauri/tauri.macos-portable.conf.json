@@ -4,6 +4,9 @@
     "active": true,
     "targets": ["app", "dmg"],
     "icon": ["icons/icon.icns"],
+    "macOS": {
+      "signingIdentity": "-"
+    },
     "resources": {
       "../../../dist/macos/LoL-Live-Widget-Server": "LoL-Live-Widget-Server"
     }
