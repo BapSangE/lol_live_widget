@@ -1,3 +1,6 @@
+#[cfg(all(target_os = "macos", feature = "macos-portable"))]
+use tauri::Manager;
+
 /// Accept only the local collector origin passed by the portable launcher.
 pub fn validate_origin(origin: &str) -> Result<(), String> {
     let port = origin
@@ -13,13 +16,23 @@ pub fn validate_origin(origin: &str) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn local_server_url() -> Result<Option<String>, String> {
+pub fn local_server_url(app: tauri::AppHandle) -> Result<Option<String>, String> {
     match std::env::var("LOL_WIDGET_LOCAL_SERVER_URL") {
         Ok(origin) => {
             validate_origin(&origin)?;
             Ok(Some(origin))
         }
-        Err(std::env::VarError::NotPresent) => Ok(None),
+        Err(std::env::VarError::NotPresent) => {
+            #[cfg(all(target_os = "macos", feature = "macos-portable"))]
+            {
+                return Ok(Some(app.state::<crate::macos_server::Collector>().origin()?));
+            }
+            #[cfg(not(all(target_os = "macos", feature = "macos-portable")))]
+            {
+                let _ = app;
+                Ok(None)
+            }
+        }
         Err(_) => Err("Invalid local server configuration".into()),
     }
 }

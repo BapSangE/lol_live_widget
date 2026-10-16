@@ -36,9 +36,30 @@ export function SettingsPanel({ settings, matches, onChange, onBack }: Props) {
             {matches.map((m) => (
               <option key={m.matchId} value={m.matchId}>
                 {m.blue.shortName} vs {m.red.shortName}
-                {m.status === 'ended' ? ' · 종료' : m.status === 'scheduled' ? ' · 예정' : ''}
+                {m.status === 'ended'
+                  ? ' · 종료'
+                  : m.status === 'scheduled'
+                    ? ' · 예정'
+                    : ''}
               </option>
             ))}
+          </select>
+        </label>
+        <label className="field inline-field">
+          글자 크기
+          <select
+            value={settings.fontScalePercent}
+            onChange={(e) =>
+              onChange({
+                fontScalePercent: Number(
+                  e.target.value,
+                ) as UserSettings['fontScalePercent'],
+              })
+            }
+          >
+            <option value="100">기본 (100%)</option>
+            <option value="120">크게 (120%)</option>
+            <option value="140">아주 크게 (140%)</option>
           </select>
         </label>
         <div className="setting-group">
@@ -123,7 +144,9 @@ export function SettingsPanel({ settings, matches, onChange, onBack }: Props) {
             </label>
           ))}
         </fieldset>
-        <p className="hint">알림은 무음이며, 선택하지 않은 이벤트도 경기 기록에 남습니다.</p>
+        <p className="hint">
+          알림은 무음이며, 선택하지 않은 이벤트도 경기 기록에 남습니다.
+        </p>
       </div>
     </section>
   );

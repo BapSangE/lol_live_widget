@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   getCurrentWindow,
   availableMonitors,
@@ -8,7 +8,12 @@ import {
 } from '@tauri-apps/api/window';
 import { PhysicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
 import { native } from '../lib/native';
-import { COMPACT_HEIGHT, COMPACT_WIDTH, EXPANDED_HEIGHT, geometry } from '../lib/policies';
+import {
+  COMPACT_HEIGHT,
+  COMPACT_WIDTH,
+  EXPANDED_HEIGHT,
+  geometry,
+} from '../lib/policies';
 import type { UserSettings } from '../types/contracts';
 import type { Dispatch, SetStateAction } from 'react';
 function monitorKey(m: Monitor) {
@@ -22,6 +27,9 @@ export function useWindowGeometry(
   onError: (message: string) => void,
 ) {
   const anchor = useRef({ x: 0, y: 0 });
+  const [monitorRevision, setMonitorRevision] = useState(0);
+  const compactHeight = Math.ceil((COMPACT_HEIGHT * settings.fontScalePercent) / 100);
+  const lastCompactHeight = useRef(compactHeight);
   const initialized = useRef(false),
     busy = useRef(false),
     lastMode = useRef(mode);
@@ -40,24 +48,48 @@ export function useWindowGeometry(
           const monitors = await availableMonitors(),
             saved = preferences.current.widgetPosition;
           monitor = saved
-            ? monitors.find((m) => monitorKey(m) === saved.monitorKey) || (await primaryMonitor())
+            ? monitors.find((m) => monitorKey(m) === saved.monitorKey) ||
+              (await primaryMonitor())
             : await primaryMonitor();
           if (!monitor) return;
           const area = monitor.workArea.size.toLogical(monitor.scaleFactor);
           anchor.current =
             saved && monitorKey(monitor) === saved.monitorKey
               ? { x: saved.x, y: saved.y }
-              : { x: (area.width - COMPACT_WIDTH) / 2, y: area.height - COMPACT_HEIGHT - 24 };
+              : {
+                  x: (area.width - COMPACT_WIDTH) / 2,
+                  y: area.height - compactHeight - 24,
+                };
+          lastCompactHeight.current = compactHeight;
           initialized.current = true;
         }
         if (!monitor) return;
         const scale = monitor.scaleFactor,
           area = monitor.workArea.size.toLogical(scale);
+        if (
+          lastCompactHeight.current !== compactHeight &&
+          anchor.current.y + lastCompactHeight.current >= area.height * 0.6
+        ) {
+          anchor.current.y += lastCompactHeight.current - compactHeight;
+        }
+        const bounds = { x: 0, y: 0, width: area.width, height: area.height };
+        const compact = geometry(
+          anchor.current,
+          false,
+          bounds,
+          EXPANDED_HEIGHT,
+          compactHeight,
+        );
+        anchor.current = { x: compact.x, y: compact.y };
         const rect = geometry(
           anchor.current,
           mode !== 'compact',
-          { x: 0, y: 0, width: area.width, height: area.height },
-          mode === 'settings' ? 300 : EXPANDED_HEIGHT,
+          bounds,
+          Math.ceil(
+            ((mode === 'settings' ? 300 : EXPANDED_HEIGHT) * settings.fontScalePercent) /
+              100,
+          ),
+          compactHeight,
         );
         await win.setSize(new LogicalSize(rect.width, rect.height));
         await win.setPosition(
@@ -67,7 +99,23 @@ export function useWindowGeometry(
           ),
         );
         lastMode.current = mode;
-        if (!disposed) await win.show();
+        lastCompactHeight.current = compactHeight;
+        if (!disposed) {
+          const position = {
+            monitorKey: monitorKey(monitor),
+            ...anchor.current,
+            anchor: 'compact' as const,
+          };
+          setSettings((s) => {
+            const saved = s.widgetPosition;
+            return saved?.monitorKey === position.monitorKey &&
+              saved.x === position.x &&
+              saved.y === position.y
+              ? s
+              : { ...s, widgetPosition: position };
+          });
+          await win.show();
+        }
       } catch (error) {
         console.error(error);
         onError('창 위치를 적용할 수 없음');
@@ -79,7 +127,15 @@ export function useWindowGeometry(
     return () => {
       disposed = true;
     };
-  }, [loaded, mode, onError]);
+  }, [
+    loaded,
+    mode,
+    onError,
+    compactHeight,
+    settings.fontScalePercent,
+    monitorRevision,
+    setSettings,
+  ]);
   useEffect(() => {
     if (!native || !loaded) return;
     let disposed = false;
@@ -97,12 +153,12 @@ export function useWindowGeometry(
           y: (pos.y - monitor.workArea.position.y) / monitor.scaleFactor,
         };
         const area = monitor.workArea.size.toLogical(monitor.scaleFactor);
-        const upward = anchor.current.y + COMPACT_HEIGHT >= area.height * 0.6;
+        const upward = anchor.current.y + lastCompactHeight.current >= area.height * 0.6;
         anchor.current = {
           x: local.x,
           y:
             lastMode.current !== 'compact' && upward
-              ? local.y + size.height / monitor.scaleFactor - COMPACT_HEIGHT
+              ? local.y + size.height / monitor.scaleFactor - lastCompactHeight.current
               : local.y,
         };
         if (!disposed)
@@ -128,7 +184,7 @@ export function useWindowGeometry(
       });
     void win
       .onScaleChanged(() => {
-        void moved();
+        if (!disposed) setMonitorRevision((revision) => revision + 1);
       })
       .then((off) => {
         if (disposed) off();

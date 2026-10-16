@@ -6,6 +6,7 @@ import argparse
 import json
 import logging
 import os
+import signal
 import socket
 import subprocess
 import sys
@@ -17,6 +18,18 @@ import httpx
 import uvicorn
 
 log = logging.getLogger(__name__)
+
+
+def serve_embedded_server(port_file: Path, stop: threading.Event | None = None) -> None:
+    """Run the bundled collector as a child process owned by the Mac app."""
+    stop = stop or threading.Event()
+    with EmbeddedServer() as server:
+        port_file.parent.mkdir(parents=True, exist_ok=True)
+        ready_file = port_file.with_suffix(f".{os.getpid()}.tmp")
+        ready_file.write_text(server.origin, encoding="utf-8")
+        ready_file.replace(port_file)
+        stop.wait()
+    port_file.unlink(missing_ok=True)
 
 
 def bundle_root() -> Path:
@@ -155,10 +168,29 @@ def main() -> int:
     parser.add_argument(
         "--smoke-test", action="store_true", help="Check the bundled collector and exit"
     )
+    parser.add_argument("--server-only", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--port-file", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
-    logs = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "LoLLiveWidget"
+    if os.environ.get("LOL_WIDGET_LOG_DIR"):
+        logs = Path(os.environ["LOL_WIDGET_LOG_DIR"])
+    elif sys.platform == "darwin":
+        logs = Path.home() / "Library" / "Logs" / "LoLLiveWidget"
+    else:
+        logs = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "LoLLiveWidget"
     logs.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(filename=logs / "portable.log", level=logging.INFO)
+    if args.server_only:
+        if not args.port_file:
+            parser.error("--server-only requires --port-file")
+        stop = threading.Event()
+        signal.signal(signal.SIGTERM, lambda *_: stop.set())
+        signal.signal(signal.SIGINT, lambda *_: stop.set())
+        try:
+            serve_embedded_server(args.port_file, stop)
+            return 0
+        except Exception:
+            log.exception("Embedded collector failed")
+            return 1
     child = None
     try:
         if not args.smoke_test:

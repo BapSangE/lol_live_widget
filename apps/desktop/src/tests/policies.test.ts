@@ -23,9 +23,15 @@ const ev = (type: MatchEvent['type'], id = type): MatchEvent => ({
 });
 describe('ticker', () => {
   it('selects strongest and never promotes equal/lower priority', () => {
-    expect(chooseTicker(null, [ev('TOWER'), ev('BARON')], ['TOWER', 'BARON'])?.type).toBe('BARON');
-    expect(chooseTicker(ev('BARON'), [ev('TOWER')], ['TOWER', 'BARON'])?.type).toBe('BARON');
-    expect(chooseTicker(ev('BARON'), [ev('GAME_END')], ['GAME_END'])?.type).toBe('GAME_END');
+    expect(chooseTicker(null, [ev('TOWER'), ev('BARON')], ['TOWER', 'BARON'])?.type).toBe(
+      'BARON',
+    );
+    expect(chooseTicker(ev('BARON'), [ev('TOWER')], ['TOWER', 'BARON'])?.type).toBe(
+      'BARON',
+    );
+    expect(chooseTicker(ev('BARON'), [ev('GAME_END')], ['GAME_END'])?.type).toBe(
+      'GAME_END',
+    );
     expect(chooseTicker(null, [ev('KILL_DELTA')], ['BARON'])).toBeNull();
   });
   it('uses received frame age, with exact threshold boundaries', () => {
@@ -40,10 +46,15 @@ describe('ticker', () => {
     expect(effectiveOpacity(35, true, false)).toBe(35);
   });
   it('expands upward at bottom and clamps negative-origin monitor', () => {
-    expect(geometry({ x: 200, y: 950 }, true, { x: 0, y: 0, width: 1920, height: 1040 }).y).toBe(
-      612,
-    );
-    const r = geometry({ x: -5, y: 20 }, true, { x: -1280, y: 0, width: 1280, height: 984 });
+    expect(
+      geometry({ x: 200, y: 950 }, true, { x: 0, y: 0, width: 1920, height: 1040 }).y,
+    ).toBe(612);
+    const r = geometry({ x: -5, y: 20 }, true, {
+      x: -1280,
+      y: 0,
+      width: 1280,
+      height: 984,
+    });
     expect(r.x).toBe(-350);
     expect(r.y).toBe(20);
   });
@@ -54,7 +65,12 @@ describe('ticker', () => {
     const expanded = geometry({ x: compact.x, y: compact.y }, true, area);
     expect(expanded.width).toBe(compact.width);
     expect(expanded.y + expanded.height).toBe(1040);
-    const small = geometry({ x: 20, y: 20 }, false, { x: 0, y: 0, width: 200, height: 50 });
+    const small = geometry({ x: 20, y: 20 }, false, {
+      x: 0,
+      y: 0,
+      width: 200,
+      height: 50,
+    });
     expect(small).toEqual({ x: 0, y: 0, width: 200, height: 50 });
   });
   it('restores corrupted settings safely', () => {
@@ -70,6 +86,30 @@ describe('ticker', () => {
 });
 it('does not reinterpret an unknown settings version as v1', () => {
   expect(
-    validateSettings({ schemaVersion: 2, opacityPercent: 35, launchAtLogin: true }).opacityPercent,
+    validateSettings({ schemaVersion: 2, opacityPercent: 35, launchAtLogin: true })
+      .opacityPercent,
   ).toBe(65);
+});
+
+it('restores font size from saved settings and safely migrates older settings', () => {
+  expect(
+    validateSettings({ schemaVersion: 1, opacityPercent: 35 }).fontScalePercent,
+  ).toBe(100);
+  for (const value of [100, 120, 140]) {
+    expect(validateSettings({ fontScalePercent: value }).fontScalePercent).toBe(value);
+  }
+  for (const value of [0, 110, 200, '140', null]) {
+    expect(validateSettings({ fontScalePercent: value }).fontScalePercent).toBe(100);
+  }
+});
+
+it('keeps enlarged windows inside the monitor and preserves their shared bottom edge', () => {
+  const area = { x: 0, y: 0, width: 1920, height: 1040 };
+  const compact = geometry({ x: 1800, y: 1000 }, false, area, 560, 87);
+  expect(compact).toEqual({ x: 1570, y: 953, width: 350, height: 87 });
+  const expanded = geometry({ x: compact.x, y: compact.y }, true, area, 560, 87);
+  expect(expanded).toEqual({ x: 1570, y: 480, width: 350, height: 560 });
+  expect(geometry({ x: 0, y: 30 }, true, { ...area, height: 300 }, 560, 87).height).toBe(
+    300,
+  );
 });
