@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import time
 from bisect import bisect_right
 from datetime import timedelta
@@ -12,7 +13,7 @@ from app.models.contracts import MatchSummary, RawFrame, utcnow
 
 class ReplayProvider:
     def __init__(self, step_seconds=10):
-        root = Path(__file__).resolve().parents[4]
+        root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[4]))
         self.archive = bool(os.environ.get("REPLAY_FIXTURE"))
         fixture = root / os.environ.get(
             "REPLAY_FIXTURE", "fixtures/raw_frames/demo.json"

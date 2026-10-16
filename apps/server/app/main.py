@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.collectors.poller import Poller
-from app.providers.lolesports import LoLEsportsProvider
+from app.providers.lolesports import LoLEsportsProvider, PublicLoLEsportsProvider
 from app.providers.replay import ReplayProvider
 from app.storage.memory import MemoryStore
 
@@ -20,14 +20,20 @@ def create_app():
         mode = os.environ.get("SOURCE_MODE", "replay")
         if mode not in ("live", "replay"):
             raise ValueError("SOURCE_MODE must be live or replay")
-        provider = (
-            ReplayProvider(int(os.environ.get("REPLAY_STEP_SECONDS", "10")))
-            if mode == "replay"
-            else LoLEsportsProvider(
+        if mode == "replay":
+            provider = ReplayProvider(int(os.environ.get("REPLAY_STEP_SECONDS", "10")))
+        elif os.environ.get("LIVE_PROVIDER", "persisted") == "public":
+            provider = PublicLoLEsportsProvider(
+                approved=os.environ.get("SOURCE_APPROVED") == "true",
+                leagues=os.environ.get("LIVE_LEAGUES", "worlds").split(","),
+            )
+        elif os.environ.get("LIVE_PROVIDER", "persisted") == "persisted":
+            provider = LoLEsportsProvider(
                 os.environ.get("LOLESPORTS_API_KEY", ""),
                 os.environ.get("SOURCE_APPROVED") == "true",
             )
-        )
+        else:
+            raise ValueError("LIVE_PROVIDER must be public or persisted")
         store = MemoryStore(mode)
         poller = Poller(provider, store, float(os.environ.get("POLL_SECONDS", "10")))
         app.state.store, app.state.poller = store, poller

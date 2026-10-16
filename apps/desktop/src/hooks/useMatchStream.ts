@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { native } from '../lib/native';
 import { useWidgetStore } from '../state/widgetStore';
 import { demoEvents, demoFrames, demoMatch } from '../lib/demo';
 import { parseSSE, wait } from '../lib/sse';
@@ -9,10 +11,31 @@ import type {
   SyncSnapshot,
   UserSettings,
 } from '../types/contracts';
-export const serverURL = (import.meta.env.VITE_SERVER_URL as string | undefined)?.replace(
-  /\/$/,
-  '',
-);
+export let serverURL =
+  import.meta.env.VITE_PORTABLE === 'true'
+    ? undefined
+    : (import.meta.env.VITE_SERVER_URL as string | undefined)?.replace(/\/$/, '');
+export async function initializeServer() {
+  if (!native) return;
+  const local = await invoke<string | null>('local_server_url');
+  if (local) {
+    const url = new URL(local);
+    if (
+      url.protocol !== 'http:' ||
+      url.hostname !== '127.0.0.1' ||
+      !url.port ||
+      url.pathname !== '/' ||
+      url.search ||
+      url.hash ||
+      url.username ||
+      url.password
+    )
+      throw new Error('Invalid embedded collector origin');
+    serverURL = url.origin;
+  } else if (import.meta.env.VITE_PORTABLE === 'true') {
+    throw new Error('Embedded collector is missing; start the portable launcher');
+  }
+}
 if (serverURL) {
   const u = new URL(serverURL);
   if (
@@ -82,7 +105,10 @@ export function useMatchStream(settings: UserSettings, loaded: boolean) {
     let selected: string | null = null,
       session: AbortController | null = null,
       discovery: Promise<void> | null = null;
-    const json = async <T>(path: string, requestSignal: AbortSignal = signal): Promise<T> => {
+    const json = async <T>(
+      path: string,
+      requestSignal: AbortSignal = signal,
+    ): Promise<T> => {
       const request = new AbortController();
       const abort = () => request.abort();
       requestSignal.addEventListener('abort', abort, { once: true });
@@ -104,7 +130,8 @@ export function useMatchStream(settings: UserSettings, loaded: boolean) {
       session = active;
       const abort = () => active.abort();
       signal.addEventListener('abort', abort, { once: true });
-      const current = () => !signal.aborted && !active.signal.aborted && selected === matchId;
+      const current = () =>
+        !signal.aborted && !active.signal.aborted && selected === matchId;
       store.setState({
         state: null,
         events: [],
@@ -131,7 +158,9 @@ export function useMatchStream(settings: UserSettings, loaded: boolean) {
             epoch = nextEpoch;
             store.setState({
               ...(restarted ? { events: [] } : {}),
-              ...(restarted || changedGame ? { nextCursor: null, historyExhausted: false } : {}),
+              ...(restarted || changedGame
+                ? { nextCursor: null, historyExhausted: false }
+                : {}),
               ticker: null,
               tickerUntil: 0,
               state: snap.state,
@@ -159,7 +188,11 @@ export function useMatchStream(settings: UserSettings, loaded: boolean) {
               else if (message.event === 'match_event')
                 store
                   .getState()
-                  .addEvents([JSON.parse(message.data) as MatchEvent], true, preferences.current);
+                  .addEvents(
+                    [JSON.parse(message.data) as MatchEvent],
+                    true,
+                    preferences.current,
+                  );
               if (message.id) cursor = message.id;
               attempt = 0;
             }
@@ -169,11 +202,13 @@ export function useMatchStream(settings: UserSettings, loaded: boolean) {
             if (!current()) return;
             console.warn('Match connection unavailable', error);
             store.setState({ connected: false, notice: '재연결 중' });
-            if (error instanceof HTTPError && error.status === 404) await refreshDiscovery();
+            if (error instanceof HTTPError && error.status === 404)
+              await refreshDiscovery();
             if (!current()) return;
-            await wait([2, 4, 8, 16, 30][Math.min(attempt++, 4)] * 1000, active.signal).catch(
-              () => {},
-            );
+            await wait(
+              [2, 4, 8, 16, 30][Math.min(attempt++, 4)] * 1000,
+              active.signal,
+            ).catch(() => {});
             // REST-sync history before retry; only events newer than its cursor can alert.
           }
         }
@@ -213,7 +248,8 @@ export function useMatchStream(settings: UserSettings, loaded: boolean) {
           store.setState({
             matches,
             playback: health.source?.playback || null,
-            sourceMode: health.sourceMode || (health.sourceStatus === 'replay' ? 'replay' : 'live'),
+            sourceMode:
+              health.sourceMode || (health.sourceStatus === 'replay' ? 'replay' : 'live'),
             ...(notice ? { notice } : {}),
           });
           if (next !== selected) {
@@ -251,7 +287,9 @@ export function useMatchStream(settings: UserSettings, loaded: boolean) {
     let retryAttempt = 0;
     const recover = async () => {
       while (!signal.aborted) {
-        await wait([2, 4, 8, 16, 30][Math.min(retryAttempt++, 4)] * 1000, signal).catch(() => {});
+        await wait([2, 4, 8, 16, 30][Math.min(retryAttempt++, 4)] * 1000, signal).catch(
+          () => {},
+        );
         if (signal.aborted) return;
         if (!store.getState().connected && !selected) await refreshDiscovery();
         else retryAttempt = 0;

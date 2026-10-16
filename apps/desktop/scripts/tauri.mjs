@@ -3,8 +3,9 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadEnv } from 'vite';
 const mode = process.argv[2] || 'dev';
+const portable = process.env.VITE_PORTABLE === 'true';
 const env = loadEnv(mode === 'dev' ? 'development' : 'production', process.cwd(), 'VITE_');
-const server = process.env.VITE_SERVER_URL || env.VITE_SERVER_URL;
+const server = portable ? '' : process.env.VITE_SERVER_URL || env.VITE_SERVER_URL;
 let origin = '';
 if (server) {
   const url = new URL(server);
@@ -29,7 +30,7 @@ writeFileSync(
   JSON.stringify({
     app: {
       security: {
-        csp: `default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https://ipc.localhost ${origin}; object-src 'none'; frame-src 'none'`,
+        csp: `default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost https://ipc.localhost ${portable ? 'http://127.0.0.1:*' : origin}; object-src 'none'; frame-src 'none'`,
       },
     },
   }),
@@ -43,6 +44,12 @@ const result = spawnSync(
     '--config',
     config,
   ],
-  { stdio: 'inherit', env: { ...process.env, ...(server ? { VITE_SERVER_URL: server } : {}) } },
+  {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      ...(portable ? { VITE_SERVER_URL: '' } : server ? { VITE_SERVER_URL: server } : {}),
+    },
+  },
 );
 process.exit(result.status ?? 1);

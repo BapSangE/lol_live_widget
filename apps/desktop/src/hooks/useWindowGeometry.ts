@@ -8,7 +8,7 @@ import {
 } from '@tauri-apps/api/window';
 import { PhysicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
 import { native } from '../lib/native';
-import { geometry } from '../lib/policies';
+import { COMPACT_HEIGHT, COMPACT_WIDTH, EXPANDED_HEIGHT, geometry } from '../lib/policies';
 import type { UserSettings } from '../types/contracts';
 import type { Dispatch, SetStateAction } from 'react';
 function monitorKey(m: Monitor) {
@@ -47,18 +47,18 @@ export function useWindowGeometry(
           anchor.current =
             saved && monitorKey(monitor) === saved.monitorKey
               ? { x: saved.x, y: saved.y }
-              : { x: (area.width - 270) / 2, y: area.height - 38 - 24 };
+              : { x: (area.width - COMPACT_WIDTH) / 2, y: area.height - COMPACT_HEIGHT - 24 };
           initialized.current = true;
         }
         if (!monitor) return;
         const scale = monitor.scaleFactor,
           area = monitor.workArea.size.toLogical(scale);
-        const rect = geometry(anchor.current, mode !== 'compact', {
-          x: 0,
-          y: 0,
-          width: area.width,
-          height: area.height,
-        });
+        const rect = geometry(
+          anchor.current,
+          mode !== 'compact',
+          { x: 0, y: 0, width: area.width, height: area.height },
+          mode === 'settings' ? 300 : EXPANDED_HEIGHT,
+        );
         await win.setSize(new LogicalSize(rect.width, rect.height));
         await win.setPosition(
           new PhysicalPosition(
@@ -97,12 +97,12 @@ export function useWindowGeometry(
           y: (pos.y - monitor.workArea.position.y) / monitor.scaleFactor,
         };
         const area = monitor.workArea.size.toLogical(monitor.scaleFactor);
-        const upward = anchor.current.y + 38 >= area.height * 0.6;
+        const upward = anchor.current.y + COMPACT_HEIGHT >= area.height * 0.6;
         anchor.current = {
           x: local.x,
           y:
             lastMode.current !== 'compact' && upward
-              ? local.y + size.height / monitor.scaleFactor - 38
+              ? local.y + size.height / monitor.scaleFactor - COMPACT_HEIGHT
               : local.y,
         };
         if (!disposed)

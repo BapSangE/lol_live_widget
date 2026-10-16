@@ -1,0 +1,45 @@
+name: Build portable Windows widget
+on:
+  push:
+    branches:
+      - 'build/windows-portable-*'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  portable:
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+      - run: npm --prefix apps/desktop ci
+      - run: python -m pip install -e "apps/server[test]" "pyinstaller>=6.10,<7"
+      - run: python -m pytest apps/server/tests
+      - run: npm --prefix apps/desktop test -- --run
+      - run: python scripts/build_windows_portable.py
+      - name: Smoke-test the frozen server
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath "$PWD/dist/LoL-Live-Widget.exe" -ArgumentList '--smoke-test' -PassThru
+          if (-not $process.WaitForExit(60000)) { $process.Kill(); throw 'Portable smoke test timed out' }
+          if ($process.ExitCode -ne 0) { throw "Portable smoke test failed: $($process.ExitCode)" }
+          Get-Content "$env:LOCALAPPDATA/LoLLiveWidget/portable-smoke.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LoL-Live-Widget-windows-x64-portable
+          path: dist/LoL-Live-Widget.exe
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: portable-diagnostic-logs
+          path: ~/AppData/Local/LoLLiveWidget/*.log

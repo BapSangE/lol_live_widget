@@ -47,13 +47,55 @@ button:hover {
   position: relative;
   overflow: hidden;
   transition: opacity 150ms ease;
-  width: min(270px, 100vw);
-  height: min(38px, 100vh);
+  width: min(350px, 100vw);
+  height: min(62px, 100vh);
+}
+.widget.compact {
+  display: flex;
+  flex-direction: column;
+}
+.widget-close {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 19px;
+  line-height: 24px;
+}
+.widget-close:hover {
+  background: #ba3a3a;
+  color: #fff;
+}
+.widget.closed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--muted);
+}
+.widget.closed button {
+  color: #168f6c;
+  padding: 5px;
 }
 .widget.expanded,
 .widget.settings {
   width: min(350px, 100vw);
   height: min(300px, 100vh);
+}
+.widget.expanded {
+  height: min(400px, 100vh);
+}
+.panel.expanded .panel-body {
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.panel.expanded .event-log {
+  min-height: 120px;
 }
 .theme-dark {
   --bg: #17231f;
@@ -63,7 +105,9 @@ button:hover {
   --hover: #25372e;
 }
 .scorebar {
-  height: 100%;
+  height: 36px;
+  flex-shrink: 0;
+  padding-right: 29px;
   display: flex;
   align-items: center;
 }
@@ -137,16 +181,51 @@ button:hover {
   letter-spacing: 0.5px;
   color: var(--muted);
   left: 24px;
-  bottom: 1px;
+  top: 27px;
   pointer-events: none;
 }
 .compact-notice {
   position: absolute;
   right: 2px;
-  bottom: 1px;
+  top: 27px;
   color: #b07b10;
   font-size: 8px;
   pointer-events: none;
+}
+.compact-record {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  padding: 0 8px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  overflow: hidden;
+}
+.compact-record-label {
+  flex-shrink: 0;
+  color: #168f6c;
+  font-size: 9px;
+}
+.compact-record time {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+.compact-record-message {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+.compact-record.empty .compact-record-message {
+  color: var(--muted);
+  font-size: 10px;
 }
 .ticker {
   display: flex;
@@ -178,7 +257,7 @@ button:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 12px;
+  padding: 0 34px 0 12px;
 }
 .brand {
   font-size: 10px;

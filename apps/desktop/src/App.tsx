@@ -7,28 +7,46 @@ import { useWidgetStore } from './state/widgetStore';
 import { useSettings } from './hooks/useSettings';
 import { useOpacity } from './hooks/useOpacity';
 import { useWindowGeometry } from './hooks/useWindowGeometry';
-import { serverURL, useMatchStream } from './hooks/useMatchStream';
+import { initializeServer, serverURL, useMatchStream } from './hooks/useMatchStream';
 import { ScoreBar } from './components/ScoreBar';
+import { CompactRecord } from './components/CompactRecord';
 import { ExpandedPanel } from './components/ExpandedPanel';
 import { SettingsPanel } from './components/SettingsPanel';
 import type { EventsPage, UserSettings } from './types/contracts';
 export default function App() {
   const { settings, setSettings, loaded, error, setError } = useSettings();
   const widget = useWidgetStore();
+  const [closed, setClosed] = useState(false);
+  const [serverReady, setServerReady] = useState(!native);
   const [hovered, setHovered] = useState(false),
     [now, setNow] = useState(Date.now());
   const report = useCallback((message: string) => setError(message), [setError]);
   const { opacity } = useOpacity(settings, hovered, report);
   useWindowGeometry(widget.mode, settings, loaded, setSettings, report);
-  useMatchStream(settings, loaded);
+  useMatchStream(settings, loaded && serverReady && !closed);
   useEffect(() => {
+    if (!native) return;
+    let active = true;
+    void initializeServer()
+      .then(() => {
+        if (active) setServerReady(true);
+      })
+      .catch(() => {
+        if (active) setError('내장 수집 서버에 연결할 수 없음');
+      });
+    return () => {
+      active = false;
+    };
+  }, [setError]);
+  useEffect(() => {
+    if (closed) return;
     const timer = setInterval(() => {
       const time = Date.now();
       setNow(time);
       useWidgetStore.getState().expire(time);
     }, 250);
     return () => clearInterval(timer);
-  }, []);
+  }, [closed]);
   useEffect(() => {
     const escape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') useWidgetStore.getState().setMode('compact');
@@ -40,10 +58,12 @@ export default function App() {
     if (!native) return;
     const off: Array<() => void> = [];
     let stopped = false;
-    void listen('open-settings', () => useWidgetStore.getState().setMode('settings')).then((f) => {
-      if (stopped) f();
-      else off.push(f);
-    });
+    void listen('open-settings', () => useWidgetStore.getState().setMode('settings')).then(
+      (f) => {
+        if (stopped) f();
+        else off.push(f);
+      },
+    );
     void listen<boolean>('always-on-top-changed', (e) =>
       setSettings((s) => ({ ...s, alwaysOnTop: e.payload })),
     ).then((f) => {
@@ -84,15 +104,17 @@ export default function App() {
             : '과거 경기 재생'
           : state?.status === 'ended'
             ? '경기 종료'
-            : !widget.connected
-              ? '재연결 중'
-              : connection === 'delayed'
-                ? '데이터 지연'
-                : connection === 'offline'
-                  ? '연결 끊김'
-                  : widget.sourceMode === 'replay'
-                    ? '모의 데이터'
-                    : '라이브';
+            : !state && widget.connected
+              ? '경기 대기'
+              : !widget.connected
+                ? '재연결 중'
+                : connection === 'delayed'
+                  ? '데이터 지연'
+                  : connection === 'offline'
+                    ? '연결 끊김'
+                    : widget.sourceMode === 'replay'
+                      ? '모의 데이터'
+                      : '라이브';
   const shownState = state
     ? {
         ...state,
@@ -134,6 +156,21 @@ export default function App() {
       setError('이전 기록을 불러올 수 없음');
     }
   };
+  const close = async () => {
+    try {
+      if (native) await invoke('quit_app');
+      else setClosed(true);
+    } catch {
+      setError('위젯을 종료할 수 없음');
+    }
+  };
+  if (closed)
+    return (
+      <main className={`widget closed theme-${theme}`}>
+        <span>위젯이 종료되었습니다</span>
+        <button onClick={() => setClosed(false)}>다시 열기</button>
+      </main>
+    );
   return (
     <main
       className={`widget ${widget.mode} theme-${theme}`}
@@ -141,12 +178,25 @@ export default function App() {
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
     >
+      <button
+        className="widget-close"
+        aria-label="위젯 종료"
+        title="종료"
+        onClick={() => void close()}
+      >
+        ×
+      </button>
       {widget.mode === 'compact' ? (
         <>
           <ScoreBar
             state={shownState}
             ticker={widget.ticker}
             status={status}
+            onExpand={() => widget.setMode('expanded')}
+          />
+          <CompactRecord
+            state={shownState}
+            events={widget.events}
             onExpand={() => widget.setMode('expanded')}
           />
           {widget.sourceMode === 'replay' && (

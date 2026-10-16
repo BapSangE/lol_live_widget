@@ -20,6 +20,7 @@ export async function writeSettings(settings: UserSettings) {
 }
 export async function setAutostart(enabled: boolean) {
   if (!native) return;
+  if (await invoke<boolean>('set_portable_autostart', { enabled })) return;
   const plugin = await import('@tauri-apps/plugin-autostart');
   if (enabled) await plugin.enable();
   else await plugin.disable();

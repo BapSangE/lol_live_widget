@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
+import re
 import time
 from datetime import timedelta
 
 import httpx
 
-from app.models.contracts import MatchSummary, RawFrame, TeamState
+from app.models.contracts import MatchSummary, RawFrame, TeamState, utcnow
 from app.providers.base import AccessDenied
 
 
@@ -169,6 +171,9 @@ class LoLEsportsProvider:
             )
             params["startingTime"] = aligned.isoformat().replace("+00:00", "Z")
         payload = await self._request(f"window/{game_id}", params, feed=True)
+        return self._frames(payload, game_id)
+
+    def _frames(self, payload, game_id):
         summary = self.game_matches[game_id]
         metadata = payload.get("gameMetadata", {})
         result = []
@@ -199,6 +204,8 @@ class LoLEsportsProvider:
                     red=red,
                     status="ended"
                     if raw.get("gameState") == "finished"
+                    else "live"
+                    if summary.status == "ended"
                     else summary.status,
                     league=summary.league,
                     game_number=summary.game_number,
@@ -222,3 +229,166 @@ class LoLEsportsProvider:
 
     async def close(self):
         await self.client.aclose()
+
+
+class PublicLoLEsportsProvider(LoLEsportsProvider):
+    """Read public schedule data and public stats without executing page scripts."""
+
+    def __init__(self, approved: bool, leagues=None, client=None):
+        super().__init__("", approved, client)
+        self.leagues = leagues or ["worlds"]
+        if any(not re.fullmatch(r"[a-z0-9_-]+", league) for league in self.leagues):
+            raise ValueError("Unsupported league slug")
+        self.schedule_at = None
+        self.schedule_failed = False
+        self.scan_next = {}
+
+    async def _public_get(self, url, params=None):
+        if not self.approved:
+            self.last_error = "access_denied"
+            raise AccessDenied("Public live collection requires explicit opt-in")
+        started = time.monotonic()
+        try:
+            response = await self.client.get(url, params=params, follow_redirects=True)
+            if response.status_code in (401, 403):
+                self.last_error = "access_denied"
+                raise AccessDenied("Public source rejected access")
+            response.raise_for_status()
+            self.last_error = None
+            return response
+        except httpx.HTTPStatusError as error:
+            self.errors += 1
+            self.last_error = (
+                "rate_limited"
+                if error.response.status_code == 429
+                else "source_unavailable"
+            )
+            raise
+        except (httpx.RequestError, AccessDenied):
+            self.errors += 1
+            self.last_error = self.last_error or "source_unavailable"
+            raise
+        finally:
+            self.latency = round((time.monotonic() - started) * 1000)
+
+    @staticmethod
+    def _page_events(html):
+        decoder = json.JSONDecoder()
+        events = {}
+        for script in re.findall(r"<script\b[^>]*>(.*?)</script>", html, re.DOTALL):
+            if "ApolloSSRDataTransport" not in script:
+                continue
+            for match in re.finditer(r'\{\s*"__typename"\s*:\s*"EventMatch"', script):
+                try:
+                    event, _ = decoder.raw_decode(script, match.start())
+                except ValueError:
+                    continue
+                if event.get("id"):
+                    events.setdefault(str(event["id"]), event)
+        if not events:
+            raise ValueError("Public schedule contains no supported match data")
+        return list(events.values())
+
+    async def list_matches(self):
+        # Until a full refresh succeeds, active get_match calls must respect
+        # the collector's shared discovery backoff instead of retrying per game.
+        self.schedule_failed = True
+        response = await self._public_get(
+            "https://lolesports.com/en-US/schedule",
+            {"leagues": ",".join(self.leagues)},
+        )
+        try:
+            events = self._page_events(response.text)
+            matches = {}
+            for event in events:
+                if event.get("league", {}).get("slug") not in self.leagues:
+                    continue
+                # Historical results on the page are not new live sessions.
+                # Keep a completed match only if this process followed it live.
+                if (
+                    event.get("state") == "completed"
+                    and event["id"] not in self.matches
+                ):
+                    continue
+                teams = event.get("matchTeams", [])
+                if len(teams) != 2:
+                    continue
+                normalized = {
+                    **event,
+                    "match": {
+                        **event.get("match", {}),
+                        "teams": [{**team, "id": team["teamId"]} for team in teams],
+                    },
+                }
+                summary = self._summary(normalized)
+                if summary:
+                    matches[summary.match_id] = summary
+            self.matches = matches
+            for match in matches.values():
+                if match.game_id:
+                    self.game_matches[match.game_id] = match
+            self.schedule_at = time.monotonic()
+            self.schedule_failed = False
+            return sorted(
+                matches.values(),
+                key=lambda m: (
+                    m.status != "live",
+                    m.scheduled_at.isoformat() if m.scheduled_at else "",
+                ),
+            )
+        except (KeyError, TypeError, ValueError):
+            self.last_error = "source_unavailable"
+            self.errors += 1
+            raise
+
+    async def get_match(self, match_id):
+        # Active games need faster refresh than the 60-second discovery interval.
+        if self.schedule_at is None or (
+            not self.schedule_failed and time.monotonic() - self.schedule_at >= 10
+        ):
+            await self.list_matches()
+        return self.matches[match_id]
+
+    async def _request(self, path, params=None, feed=False):
+        if not feed:
+            raise ValueError("Public provider uses schedule HTML for discovery")
+        response = await self._public_get(
+            f"https://feed.lolesports.com/livestats/v1/{path}", params
+        )
+        try:
+            return response.json()
+        except ValueError:
+            self.last_error = "source_unavailable"
+            self.errors += 1
+            raise
+
+    async def get_game_frames(self, game_id, after_source_timestamp=None):
+        # With no startingTime the feed returns the game's first ten seconds.
+        # Each requested window contains only ten seconds, so overlap must be
+        # followed by additional windows to advance beyond the previous cursor.
+        latest = utcnow() - timedelta(seconds=20)
+        start = after_source_timestamp or (latest - timedelta(seconds=10))
+        if game_id in self.scan_next:
+            start = max(start, self.scan_next[game_id] - timedelta(seconds=20))
+        start = start.replace(second=start.second - start.second % 10, microsecond=0)
+        latest = latest.replace(
+            second=latest.second - latest.second % 10, microsecond=0
+        )
+        frames = []
+        for _ in range(6):
+            if start > latest:
+                break
+            payload = await self._request(
+                f"window/{game_id}",
+                {"startingTime": start.isoformat().replace("+00:00", "Z")},
+                feed=True,
+            )
+            window = self._frames(payload, game_id)
+            frames.extend(window)
+            start += timedelta(seconds=10)
+            if any(frame.status == "ended" for frame in window):
+                break
+        # Track scanned empty windows separately from the last observed frame;
+        # otherwise a long source gap traps every retry in the same old range.
+        self.scan_next[game_id] = start
+        return frames

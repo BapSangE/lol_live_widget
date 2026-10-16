@@ -1,11 +1,49 @@
-# Implementation ledger — LoL Live Widget v1.0
+# LoL Live Widget — 1차 완료 및 검증 기록
+
+## 현재 상태 — 2026-10-16 / 0.1.0 1차 마무리
+
+- 사용자 확인: 전달한 단일 EXE가 실제 Windows에서 정상 실행됨. 세부 OS·DPI·트레이·자동 실행 결과는 별도 확인하지 않았으므로 통과로 간주하지 않음.
+- 구현 완료: 최소화 최신 기록 한 줄, 확장 기록 두 건 공간, 동일 가로 폭 350px, 모든 모드 X 종료, 공개 비공식 공급원, 단일 EXE와 내장 수집기.
+- Windows CI: 서버 42건·UI 19건, release 빌드, 완성 EXE의 frozen 서버 smoke test 통과. Rust 4건은 앞선 Windows 빌드에서 통과.
+- 검증한 빌드: `80779f204c9fe1a3f4f9eecb091405db51a772f9`, [성공한 실행](https://github.com/BapSangE/lol_live_widget/actions/runs/38840609609).
+- 전달 EXE: `LoL-Live-Widget.exe`, 25,505,048 bytes. SHA-256: `e58403c8641919958062c624e9facc21898b85252b5fa17762a9c706de0491b0`.
+- 기본 portable은 Worlds 공개 라이브, 일반 개발 기본값은 모의 데이터. 공개 경로는 API 키를 사용하지 않음.
+- 다음 작업: 진행 중 경기의 지속 수집·세트 전환·종료 확인. X/트레이 종료·설정 저장·자동 실행·DPI/다중 모니터·새 PC WebView2 설치는 [수용 테스트](test_plan.md)에 남김.
+- 1차 정리는 문서 갱신과 런처 타입 표기·Rust 서식 정리이며, 이미 전달한 EXE의 동작을 변경하지 않음.
+- 정리 후 로컬 재검증: 서버 42/42, UI 19/19, Rust 4/4, TypeScript/Vite production 빌드, Ruff, 문서 상대 링크와 전달 EXE 해시 확인 통과. 서버 테스트의 upstream Starlette/httpx deprecation 경고 1건은 기존 항목.
+
+## 이전 구현 기록
+
+아래 내용은 각 작업 당시의 기록이다. 미실행·미배포·크기·테스트 수 등은 이후 변경될 수 있으며, 최신 상태는 위 요약과 README를 기준으로 한다.
+
+## 2026-10-16 expanded history space and shared width
+
+- Set compact and expanded width to 350px; compact remains 62px high, expanded is 400px, settings remains 300px.
+- Expanded history reserves at least 120px for two ordinary records, with body scrolling on small work areas. Native geometry and initial size use the same dimensions.
+- Desktop 19/19, Rust 3/3, TypeScript/Vite build pass. Browser measurements confirm compact 350×62, expanded 350×400 and a 120px history area with full statistics and archive notice visible.
+
+## 2026-10-16 compact latest record
+
+- Added a persistent latest-record row below the compact scorebar; current match/game only, ellipsis + full tooltip, click to expand history.
+- Compact window is now 270×62. Updated native initial size, screen clamping, expansion bottom anchor and moved-window persistence calculations together.
+- Verified in browser with the actual LCK archive: GEN/HLE score above, latest kill-window record below, retained after ticker expiry. Restored public live waiting mode after playback verification.
+- Desktop 19/19, Rust 3/3, TypeScript/Vite production build pass. Windows runtime/DPI checks remain pending.
+
+## 2026-10-16 public unofficial source
+
+- Added opt-in `LIVE_PROVIDER=public`: public schedule HTML discovery and keyless stats feed. No page JavaScript execution or copied API keys.
+- Added `scripts/run_live.py` and `라이브 위젯 실행.command`; existing LCK replay launcher retained.
+- Real local HTTP: live mode healthy, 40 upcoming Worlds matches, no ongoing match at verification. Next listed start is 2026-10-17 03:00 KST.
+- Fixed feed window advancement, empty-gap recovery, terminal-frame ingestion and shared discovery retry behavior; corrected connected/no-match UI to 경기 대기.
+- Fresh verification: server 40/40, desktop 17/17, TypeScript/Vite production build, changed Python Ruff checks and diff whitespace checks pass.
+- Live match score/event progression remains pending an actual ongoing match. See [public source validation](unofficial_live_validation.md) for evidence and known limitations.
 
 - Baseline: 67a5022, README only; branch feat/lol-live-widget-mvp.
 - Ruling: Use an isolated feature branch in the current checkout rather than another worktree. The workspace is empty and user authorized implementation; cost: changes visible in this checkout.
 - Ruling: Phase 0 Windows validation cannot execute on this macOS host. Implement both alpha backends and Windows CI, keep native alpha opt-in until hardware verification. Cost: Windows release remains gated.
 - Ruling: Provider credentials and approval absent. Live mode fails closed; replay is the default and visibly labelled. Cost: actual live adapter response compatibility remains unverified.
 - Interfaces: detector emits MatchEvent to memory store; REST and SSE consume immutable snapshots; /sync supplies cursor to desktop stream. Shared contracts include DRAGON_SOUL.
-- Tasks: [ ] foundations [ ] offline UI [ ] native window/settings [ ] collector [ ] detector [ ] sync integration [ ] packaging/docs.
+- 당시 작업 목록: foundations → offline UI → native window/settings → collector → detector → sync integration → packaging/docs (현재 구현 완료).
 
 - Detector RED: 5 failures, then 6/6 pass. Store RED: 5 missing behaviors, then 11/11 server suite pass.
 - API RED: 2 missing endpoint failures, then 13/13 server suite pass.

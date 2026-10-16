@@ -14,8 +14,8 @@
       {
         "label": "main",
         "title": "LoL Live Widget",
-        "width": 270,
-        "height": 38,
+        "width": 350,
+        "height": 62,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
