@@ -1,0 +1,78 @@
+{
+  "data": {
+    "__typename": "Query",
+    "esports": {
+      "__typename": "EsportsData",
+      "events": [
+        {
+          "__typename": "EventMatch",
+          "id": "115660540726095109",
+          "league": {
+            "id": "98767975604431411",
+            "name": "Worlds",
+            "slug": "worlds"
+          },
+          "match": {
+            "games": [
+              {
+                "id": "115660540726095110",
+                "number": 1,
+                "state": "completed"
+              },
+              {
+                "id": "115660540726095111",
+                "number": 2,
+                "state": "completed"
+              },
+              {
+                "id": "115660540726095112",
+                "number": 3,
+                "state": "inProgress"
+              },
+              {
+                "id": "115660540726095113",
+                "number": 4,
+                "state": "unstarted"
+              },
+              {
+                "id": "115660540726095114",
+                "number": 5,
+                "state": "unstarted"
+              }
+            ]
+          },
+          "matchTeams": [
+            {
+              "code": "IG",
+              "name": "Invictus Gaming",
+              "result": {
+                "__typename": "TeamResult",
+                "gameWins": 1,
+                "outcome": null
+              },
+              "teamId": "99566404848691211"
+            },
+            {
+              "code": "TES",
+              "name": "TOP ESPORTS",
+              "result": {
+                "__typename": "TeamResult",
+                "gameWins": 1,
+                "outcome": null
+              },
+              "teamId": "99566404854685458"
+            }
+          ],
+          "startTime": "2026-11-03T22:00:00Z",
+          "state": "inProgress",
+          "type": "match"
+        }
+      ],
+      "pages": {
+        "__typename": "Pages",
+        "newer": null,
+        "older": null
+      }
+    }
+  }
+}

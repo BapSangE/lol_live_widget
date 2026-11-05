@@ -243,13 +243,15 @@ class PublicLoLEsportsProvider(LoLEsportsProvider):
         self.schedule_failed = False
         self.scan_next = {}
 
-    async def _public_get(self, url, params=None):
+    async def _public_get(self, url, params=None, headers=None):
         if not self.approved:
             self.last_error = "access_denied"
             raise AccessDenied("Public live collection requires explicit opt-in")
         started = time.monotonic()
         try:
-            response = await self.client.get(url, params=params, follow_redirects=True)
+            response = await self.client.get(
+                url, params=params, headers=headers, follow_redirects=True
+            )
             if response.status_code in (401, 403):
                 self.last_error = "access_denied"
                 raise AccessDenied("Public source rejected access")
@@ -299,6 +301,45 @@ class PublicLoLEsportsProvider(LoLEsportsProvider):
         )
         try:
             events = self._page_events(response.text)
+            # Live matches are omitted from the schedule HTML; query them separately.
+            live = await self._public_get(
+                "https://lolesports.com/api/gql",
+                {
+                    "operationName": "homeEvents",
+                    "variables": json.dumps(
+                        {
+                            "hl": "en-US",
+                            "sport": ["lol"],
+                            "eventState": ["inProgress"],
+                            "eventType": "match",
+                            "pageSize": 100,
+                        }
+                    ),
+                    "extensions": json.dumps(
+                        {
+                            "persistedQuery": {
+                                "version": 1,
+                                # shortcut: public query ID; update if the site replaces its manifest.
+                                "sha256Hash": "e4da9fd0ab89ecdb783912d74799688d1f52f1edc9b87497d3409c74d9b4291a",
+                            }
+                        }
+                    ),
+                },
+                headers={
+                    "content-type": "application/json",
+                    "apollographql-client-name": "Esports Web",
+                    "apollographql-client-version": "1",
+                },
+            )
+            payload = live.json()
+            if not isinstance(payload, dict) or payload.get("errors"):
+                raise ValueError("Public live query failed")
+            live_events = payload["data"]["esports"]["events"]
+            if not isinstance(live_events, list) or any(
+                not isinstance(event, dict) for event in live_events
+            ):
+                raise ValueError("Public live query contains invalid events")
+            events.extend(live_events)
             matches = {}
             for event in events:
                 if event.get("league", {}).get("slug") not in self.leagues:
@@ -355,6 +396,9 @@ class PublicLoLEsportsProvider(LoLEsportsProvider):
         response = await self._public_get(
             f"https://feed.lolesports.com/livestats/v1/{path}", params
         )
+        # A newly announced set can have no published statistics yet.
+        if response.status_code == 204:
+            return {"frames": []}
         try:
             return response.json()
         except ValueError:
@@ -366,7 +410,8 @@ class PublicLoLEsportsProvider(LoLEsportsProvider):
         # With no startingTime the feed returns the game's first ten seconds.
         # Each requested window contains only ten seconds, so overlap must be
         # followed by additional windows to advance beyond the previous cursor.
-        latest = utcnow() - timedelta(seconds=20)
+        # A ten-second window must END at least fifty seconds before now.
+        latest = utcnow() - timedelta(seconds=60)
         start = after_source_timestamp or (latest - timedelta(seconds=10))
         if game_id in self.scan_next:
             start = max(start, self.scan_next[game_id] - timedelta(seconds=20))

@@ -1,5 +1,6 @@
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import app.main as server_main
 import httpx
@@ -49,6 +50,8 @@ def source(client, approved=True):
 @pytest.mark.asyncio
 async def test_public_discovery_normalizes_team_ids_and_excludes_historical_matches():
     async def respond(request):
+        if request.url.path == "/api/gql":
+            return httpx.Response(200, json={"data": {"esports": {"events": []}}})
         assert "x-api-key" not in request.headers
         assert request.url.host == "lolesports.com"
         return httpx.Response(
@@ -71,6 +74,8 @@ async def test_discovery_refreshes_active_game_and_keeps_terminal_match(monkeypa
     current = [event()]
 
     async def respond(request):
+        if request.url.path == "/api/gql":
+            return httpx.Response(200, json={"data": {"esports": {"events": []}}})
         return httpx.Response(200, text=page(current[0]))
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
@@ -88,11 +93,13 @@ async def test_discovery_refreshes_active_game_and_keeps_terminal_match(monkeypa
 async def test_live_windows_advance_and_reach_store_without_fabricating_game_clock(
     monkeypatch,
 ):
-    now = datetime(2026, 10, 16, 0, 1, 0, tzinfo=UTC)
+    now = datetime(2026, 10, 16, 0, 1, 40, tzinfo=UTC)
     monkeypatch.setattr(lolesports, "utcnow", lambda: now)
     starts = []
 
     async def respond(request):
+        if request.url.path == "/api/gql":
+            return httpx.Response(200, json={"data": {"esports": {"events": []}}})
         assert "x-api-key" not in request.headers
         if request.url.host == "lolesports.com":
             return httpx.Response(200, text=page(event()))
@@ -147,6 +154,8 @@ async def test_changed_page_is_reported_as_source_failure_instead_of_empty_sched
     html,
 ):
     async def respond(request):
+        if request.url.path == "/api/gql":
+            return httpx.Response(200, json={"data": {"esports": {"events": []}}})
         return httpx.Response(200, text=html)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
@@ -159,6 +168,8 @@ async def test_changed_page_is_reported_as_source_failure_instead_of_empty_sched
 @pytest.mark.asyncio
 async def test_public_access_denial_stops_collector_without_exposing_credentials():
     async def respond(request):
+        if request.url.path == "/api/gql":
+            return httpx.Response(200, json={"data": {"esports": {"events": []}}})
         return httpx.Response(403)
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
@@ -181,6 +192,8 @@ async def test_public_mode_still_requires_explicit_opt_in():
 @pytest.mark.asyncio
 async def test_public_schedule_follows_real_website_redirects():
     async def respond(request):
+        if request.url.path == "/api/gql":
+            return httpx.Response(200, json={"data": {"esports": {"events": []}}})
         if request.url.path == "/en-US/schedule":
             return httpx.Response(308, headers={"location": "/en-US/leagues/worlds"})
         return httpx.Response(200, text=page(event()))
@@ -193,11 +206,13 @@ async def test_public_schedule_follows_real_website_redirects():
 @pytest.mark.asyncio
 async def test_completed_schedule_cannot_stop_before_terminal_feed_frame(monkeypatch):
     monkeypatch.setattr(
-        lolesports, "utcnow", lambda: datetime(2026, 10, 16, 0, 1, tzinfo=UTC)
+        lolesports, "utcnow", lambda: datetime(2026, 10, 16, 0, 1, 40, tzinfo=UTC)
     )
     state = ["inProgress"]
 
     async def respond(request):
+        if request.url.path == "/api/gql":
+            return httpx.Response(200, json={"data": {"esports": {"events": []}}})
         if request.url.host == "lolesports.com":
             return httpx.Response(200, text=page(event(state[0])))
         stamp = request.url.params["startingTime"]
@@ -240,6 +255,8 @@ async def test_schedule_rate_limit_is_not_retried_by_each_active_match(monkeypat
     rejected = [False]
 
     async def respond(request):
+        if request.url.path == "/api/gql":
+            return httpx.Response(200, json={"data": {"esports": {"events": []}}})
         requests.append(request.url)
         return (
             httpx.Response(429)
@@ -265,6 +282,8 @@ async def test_empty_feed_gap_does_not_permanently_trap_scan_cursor(monkeypatch)
     )
 
     async def respond(request):
+        if request.url.path == "/api/gql":
+            return httpx.Response(200, json={"data": {"esports": {"events": []}}})
         if request.url.host == "lolesports.com":
             return httpx.Response(200, text=page(event()))
         stamp = request.url.params["startingTime"]
@@ -306,10 +325,12 @@ def test_public_mode_bootstraps_rest_without_api_key(monkeypatch):
     monkeypatch.setenv("LIVE_LEAGUES", "worlds")
     monkeypatch.delenv("LOLESPORTS_API_KEY", raising=False)
     monkeypatch.setattr(
-        lolesports, "utcnow", lambda: datetime(2026, 10, 16, 0, 1, tzinfo=UTC)
+        lolesports, "utcnow", lambda: datetime(2026, 10, 16, 0, 1, 40, tzinfo=UTC)
     )
 
     async def respond(request):
+        if request.url.path == "/api/gql":
+            return httpx.Response(200, json={"data": {"esports": {"events": []}}})
         assert "x-api-key" not in request.headers
         if request.url.host == "lolesports.com":
             return httpx.Response(200, text=page(event()))
@@ -345,3 +366,161 @@ def test_public_mode_bootstraps_rest_without_api_key(monkeypatch):
             client.get("/api/v1/matches/m/events").json()["items"][0]["id"]
             == snap["events"][0]["id"]
         )
+
+
+@pytest.mark.asyncio
+async def test_live_match_missing_from_html_reaches_store_and_refreshes_next_game(
+    monkeypatch,
+):
+    payload = json.loads(
+        (
+            Path(__file__).resolve().parents[3]
+            / "fixtures/captures/worlds-2026-11-04-tes-ig-live.json"
+        ).read_text()
+    )
+    clock = [100.0]
+    monkeypatch.setattr(lolesports.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(
+        lolesports, "utcnow", lambda: datetime(2026, 11, 4, 0, 30, tzinfo=UTC)
+    )
+    stale = {**payload["data"]["esports"]["events"][0], "state": "unstarted"}
+    stale["match"] = {"games": []}
+    schedule = [event("unstarted")]
+
+    async def respond(request):
+        if request.url.path == "/api/gql":
+            assert request.method == "GET"
+            assert "x-api-key" not in request.headers
+            assert request.headers["content-type"] == "application/json"
+            assert request.headers["apollographql-client-name"]
+            assert json.loads(request.url.params["variables"])["eventState"] == [
+                "inProgress"
+            ]
+            return httpx.Response(200, json=payload)
+        if request.url.host == "lolesports.com":
+            return httpx.Response(200, text=page(*schedule))
+        return httpx.Response(
+            200,
+            json={
+                "gameMetadata": {
+                    "blueTeamMetadata": {"esportsTeamId": "99566404854685458"},
+                    "redTeamMetadata": {"esportsTeamId": "99566404848691211"},
+                },
+                "frames": [
+                    {
+                        "rfc460Timestamp": request.url.params["startingTime"],
+                        "gameState": "in_game",
+                        "blueTeam": {"totalKills": 7},
+                        "redTeam": {"totalKills": 4},
+                    }
+                ],
+            },
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        p = source(client)
+        match = (await p.list_matches())[0]
+        assert (match.match_id, match.status, match.game_id, match.game_number) == (
+            "115660540726095109",
+            "live",
+            "115660540726095112",
+            3,
+        )
+        poller = Poller(p, MemoryStore("live"))
+        await poller.collect(match)
+        snap = await poller.store.sync(match.match_id)
+        assert (snap.state.blue.short_name, snap.state.blue.kills) == ("TES", 7)
+        assert (snap.state.red.short_name, snap.state.red.kills) == ("IG", 4)
+        schedule.append(stale)
+        games = payload["data"]["esports"]["events"][0]["match"]["games"]
+        games[2]["state"], games[3]["state"] = "completed", "inProgress"
+        clock[0] += 11
+        refreshed = await p.get_match(match.match_id)
+        assert (refreshed.game_id, refreshed.game_number, refreshed.status) == (
+            "115660540726095113",
+            4,
+            "live",
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "payload",
+    [
+        [],
+        {"errors": [{"message": "query changed"}]},
+        {"data": {"esports": None}},
+        {"data": {"esports": {"events": {}}}},
+    ],
+)
+async def test_live_query_failure_is_not_reported_as_healthy_empty_schedule(payload):
+    async def respond(request):
+        if request.url.path == "/api/gql":
+            return httpx.Response(200, json=payload)
+        return httpx.Response(200, text=page(event("unstarted")))
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        p = source(client)
+        poller = Poller(p, MemoryStore("live"))
+        await poller.tick()
+        assert poller.store.source_error == "source_unavailable"
+        assert (await p.health())["availability"] == "source_unavailable"
+
+
+@pytest.mark.asyncio
+async def test_live_windows_respect_feed_fifty_second_broadcast_delay(monkeypatch):
+    now = datetime(2026, 11, 4, 0, 34, 7, tzinfo=UTC)
+    monkeypatch.setattr(lolesports, "utcnow", lambda: now)
+
+    async def respond(request):
+        if request.url.path == "/api/gql":
+            return httpx.Response(200, json={"data": {"esports": {"events": []}}})
+        if request.url.host == "lolesports.com":
+            return httpx.Response(200, text=page(event()))
+        start = datetime.fromisoformat(request.url.params["startingTime"])
+        if start + timedelta(seconds=10) > now - timedelta(seconds=50):
+            return httpx.Response(400, json={"message": "window ahead of broadcast"})
+        return httpx.Response(
+            200,
+            json={
+                "frames": [
+                    {
+                        "rfc460Timestamp": start.isoformat(),
+                        "gameState": "in_game",
+                        "blueTeam": {"totalKills": 4},
+                        "redTeam": {"totalKills": 2},
+                    }
+                ]
+            },
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        p = source(client)
+        await p.list_matches()
+        frames = await p.get_game_frames("g1")
+        assert frames[-1].blue.kills == 4
+        assert frames[-1].source_timestamp == datetime(2026, 11, 4, 0, 33, tzinfo=UTC)
+
+
+@pytest.mark.asyncio
+async def test_new_game_without_published_frames_waits_without_source_error(
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        lolesports, "utcnow", lambda: datetime(2026, 11, 4, 0, 54, tzinfo=UTC)
+    )
+
+    async def respond(request):
+        if request.url.path == "/api/gql":
+            return httpx.Response(200, json={"data": {"esports": {"events": []}}})
+        if request.url.host == "lolesports.com":
+            return httpx.Response(200, text=page(event(game="new-game", number=4)))
+        return httpx.Response(204)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        p = source(client)
+        poller = Poller(p, MemoryStore("live"))
+        await poller.tick()
+        assert poller.matches[0].game_number == 4
+        assert poller.store.source_error is None
+        assert (await p.health())["availability"] == "available"

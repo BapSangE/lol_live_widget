@@ -16,6 +16,8 @@
 
 ## 다운로드
 
+> **소스 수정 현황 (2026-11-05):** `main`에 라이브 경기 탐색·통계 조회 지연·새 세트 대기 처리 수정이 반영되었습니다. 아래 기존 `v0.2.0` / `v0.2.0-macos.1` 배포 파일에는 이 수정이 포함되지 않습니다. Windows EXE와 macOS 앱은 각 플랫폼에서 별도로 빌드·검증한 뒤 배포합니다.
+
 **설치 도구나 API 키 없이 파일을 받아 바로 실행하세요.**
 
 [![Windows 다운로드](https://img.shields.io/badge/다운로드-Windows_x64_EXE-0078D4?style=for-the-badge&logo=windows)](https://github.com/BapSangE/lol_live_widget/releases/latest/download/LoL-Live-Widget.exe)
@@ -112,11 +114,11 @@ Windows는 EXE를 더블 클릭하고, Mac은 DMG 안의 앱을 Applications로 
 
 ## 데이터와 검증 범위
 
-공개 일정 페이지의 경기 JSON과 `feed.lolesports.com` 통계 피드를 읽는 **개인용 비공식 클라이언트**입니다. 기본 경로는 API 키를 읽거나 전송하지 않습니다. 공개 페이지 형식이나 접근 정책이 바뀌면 수집이 중단될 수 있습니다.
+공개 일정 페이지와 공식 웹의 공개 라이브 GraphQL 조회, `feed.lolesports.com` 통계 피드를 읽는 **개인용 비공식 클라이언트**입니다. 기본 경로는 API 키를 읽거나 전송하지 않습니다. 공개 페이지 형식이나 접근 정책이 바뀌면 수집이 중단될 수 있습니다.
 
 - **확인 완료:** 공개 일정·과거 경기 feed 응답, 실제 LCK 샘플 재생, Windows와 macOS에서 사용자 실행 확인.
 - **추가 확인 필요:** 진행 중 경기의 연속 수신 → 스코어·기록 갱신 → 세트 전환 → 종료까지의 전체 흐름.
-- 일정 캐시로 경기 발견이 늦을 수 있으며, 통계는 현재 시각보다 약 20초 전까지 조회합니다. 이 수치는 방송 대비 실측 지연이 아닙니다.
+- 일정 캐시로 경기 발견이 늦을 수 있으며, 통계는 조회 구간의 끝이 현재 시각보다 최소 50초 이전이 되도록 조회합니다. 이 수치는 방송 대비 실측 지연이 아닙니다.
 - 공급원이 제공하지 않는 값은 `null`로 처리합니다. 모의 데이터는 `DEMO`, 과거 경기 재생은 `REPLAY`로 표시합니다.
 
 [공개 공급원 검증 기록](docs/unofficial_live_validation.md) · [LCK 실제 캡처 검증](docs/lck_2026_capture_test.md)
