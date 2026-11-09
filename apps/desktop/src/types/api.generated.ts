@@ -134,7 +134,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "KILL_DELTA" | "MULTIKILL_WINDOW" | "DRAGON" | "BARON" | "ELDER" | "DRAGON_SOUL" | "TOWER" | "GOLD_LEAD_CHANGE" | "GAME_END";
+            type: "KILL_DELTA" | "PLAYER_KILL" | "PLAYER_DEATH" | "MULTIKILL_WINDOW" | "DRAGON" | "BARON" | "ELDER" | "DRAGON_SOUL" | "TOWER" | "GOLD_LEAD_CHANGE" | "GAME_END";
             /** Gametimeseconds */
             gameTimeSeconds: number | null;
             /** Occurredat */

@@ -8,6 +8,8 @@ from pydantic.alias_generators import to_camel
 
 EventType = Literal[
     "KILL_DELTA",
+    "PLAYER_KILL",
+    "PLAYER_DEATH",
     "MULTIKILL_WINDOW",
     "DRAGON",
     "BARON",
@@ -53,6 +55,14 @@ class MatchSummary(Contract):
     scheduled_at: datetime | None = None
 
 
+class PlayerState(Contract):
+    participant_id: int = Field(ge=1, le=10)
+    team_id: str
+    name: str
+    kills: int | None = Field(default=None, ge=0)
+    deaths: int | None = Field(default=None, ge=0)
+
+
 class RawFrame(Contract):
     match_id: str
     game_id: str = Field(min_length=1)
@@ -63,6 +73,7 @@ class RawFrame(Contract):
     status: MatchStatus = "live"
     league: str = "worlds"
     game_number: int | None = 1
+    players: list[PlayerState] = Field(default_factory=list)
     winner_team_id: str | None = None
     elder_team_id: str | None = None
     soul_team_id: str | None = None

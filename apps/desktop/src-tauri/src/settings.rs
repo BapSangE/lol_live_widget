@@ -6,6 +6,7 @@ use tauri::Manager;
 #[serde(rename_all = "camelCase", default)]
 pub struct Settings {
     pub schema_version: u8,
+    pub player_events_initialized: bool,
     pub opacity_percent: u8,
     pub font_scale_percent: u8,
     pub brighten_on_hover: bool,
@@ -26,7 +27,7 @@ pub struct FavoriteTeam { pub id: String, pub name: String }
 pub struct Position { pub monitor_key: Option<String>, pub x: f64, pub y: f64, #[serde(default="compact")] pub anchor: String }
 fn compact()->String { "compact".into() }
 impl Default for Settings {
- fn default()->Self {Self {schema_version:1,opacity_percent:65,font_scale_percent:100,brighten_on_hover:false,event_display_seconds:6,preferred_match_id:None,favorite_team:None,notified_favorite_match_ids:vec![],important_types:vec!["GAME_END","BARON","ELDER","GOLD_LEAD_CHANGE","DRAGON_SOUL","MULTIKILL_WINDOW","DRAGON","TOWER"].into_iter().map(String::from).collect(),always_on_top:true,launch_at_login:false,theme:"light".into(),widget_position:None}}
+ fn default()->Self {Self {schema_version:1,player_events_initialized:false,opacity_percent:65,font_scale_percent:100,brighten_on_hover:false,event_display_seconds:6,preferred_match_id:None,favorite_team:None,notified_favorite_match_ids:vec![],important_types:vec!["PLAYER_KILL","PLAYER_DEATH","GAME_END","BARON","ELDER","GOLD_LEAD_CHANGE","DRAGON_SOUL","MULTIKILL_WINDOW","DRAGON","TOWER"].into_iter().map(String::from).collect(),always_on_top:true,launch_at_login:false,theme:"light".into(),widget_position:None}}
 }
 impl Settings {
  pub fn validate(&self)->Result<(),String>{
@@ -35,7 +36,7 @@ impl Settings {
   if ![100,120,140].contains(&self.font_scale_percent){return Err("Invalid font size".into());}
   if !(3..=15).contains(&self.event_display_seconds){return Err("Invalid event duration".into());}
   if !["light","dark","system"].contains(&self.theme.as_str()){return Err("Invalid theme".into());}
-  if self.important_types.iter().any(|t|!["GAME_END","BARON","ELDER","GOLD_LEAD_CHANGE","DRAGON_SOUL","MULTIKILL_WINDOW","DRAGON","TOWER","KILL_DELTA"].contains(&t.as_str())){return Err("Unknown event filter".into());}
+  if self.important_types.iter().any(|t|!["GAME_END","BARON","ELDER","GOLD_LEAD_CHANGE","DRAGON_SOUL","MULTIKILL_WINDOW","DRAGON","TOWER","KILL_DELTA","PLAYER_KILL","PLAYER_DEATH"].contains(&t.as_str())){return Err("Unknown event filter".into());}
   if let Some(team)=&self.favorite_team {if team.id.trim().is_empty() || team.id.len()>128 || team.name.trim().is_empty() || team.name.chars().count()>100 {return Err("Invalid favorite team".into());}}
   if self.notified_favorite_match_ids.len()>50 || self.notified_favorite_match_ids.iter().any(|id|id.is_empty()||id.len()>128){return Err("Invalid favorite notification history".into());}
   if let Some(p)=&self.widget_position {if !p.x.is_finite()||!p.y.is_finite()||p.anchor!="compact" {return Err("Invalid position".into());}}
@@ -61,6 +62,17 @@ pub fn save_settings(app:tauri::AppHandle,settings:Settings)->Result<(),String>{
 #[cfg(test)]
 mod tests {
  use super::*;
+ #[test] fn player_event_settings_roundtrip_without_resetting_user_choices() {
+  let older:Settings=serde_json::from_str(r#"{"opacityPercent":35,"importantTypes":["BARON"]}"#).unwrap();
+  assert!(!older.player_events_initialized);
+  assert_eq!(older.opacity_percent,35);
+  let saved:Settings=serde_json::from_str(r#"{"playerEventsInitialized":true,"importantTypes":["PLAYER_KILL","PLAYER_DEATH"]}"#).unwrap();
+  assert!(saved.validate().is_ok());
+  assert_eq!(serde_json::to_value(saved).unwrap()["playerEventsInitialized"],true);
+  let disabled:Settings=serde_json::from_str(r#"{"playerEventsInitialized":true,"importantTypes":[]}"#).unwrap();
+  assert!(disabled.validate().is_ok());
+  assert!(disabled.important_types.is_empty());
+ }
  #[test] fn favorite_team_migrates_and_roundtrips() {
   let older:Settings=serde_json::from_str(r#"{"opacityPercent":35}"#).unwrap();
   let json=serde_json::to_value(older).unwrap();

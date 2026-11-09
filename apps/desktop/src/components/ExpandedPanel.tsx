@@ -3,6 +3,8 @@ import { useWidgetStore } from '../state/widgetStore';
 import { formatTime, stat } from '../lib/policies';
 import type { MatchEvent, MatchState, MatchSummary } from '../types/contracts';
 const names: Record<string, string> = {
+  PLAYER_KILL: '선수 킬',
+  PLAYER_DEATH: '선수 사망',
   KILL_DELTA: '킬',
   MULTIKILL_WINDOW: '킬 교환',
   DRAGON: '드래곤',
@@ -141,7 +143,9 @@ export function ExpandedPanel({
             <span>◌</span>
             <p>진행 중 경기 없음</p>
             {next?.scheduledAt && (
-              <small>다음 경기 {new Date(next.scheduledAt).toLocaleString('ko-KR')}</small>
+              <small>
+                다음 경기 {new Date(next.scheduledAt).toLocaleString('ko-KR')}
+              </small>
             )}
             <button onClick={onSettings}>경기 선택</button>
           </div>

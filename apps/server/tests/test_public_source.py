@@ -524,3 +524,26 @@ async def test_new_game_without_published_frames_waits_without_source_error(
         assert poller.matches[0].game_number == 4
         assert poller.store.source_error is None
         assert (await p.health())["availability"] == "available"
+
+
+def test_player_normalization_requires_source_names_and_preserves_missing_counters():
+    metadata = {
+        "participantMetadata": [
+            {"participantId": 1, "summonerName": "T1 Zeus"},
+            {"participantId": 2, "summonerName": " "},
+        ]
+    }
+    players = lolesports.LoLEsportsProvider._players(
+        {
+            "participants": [
+                {"participantId": 1, "kills": True, "deaths": -1},
+                {"participantId": 2, "kills": 1, "deaths": 0},
+                {"participantId": 3, "kills": 1, "deaths": 0},
+            ]
+        },
+        metadata,
+        "t1",
+    )
+    assert len(players) == 1
+    assert players[0].name == "T1 Zeus"
+    assert players[0].kills is None and players[0].deaths is None

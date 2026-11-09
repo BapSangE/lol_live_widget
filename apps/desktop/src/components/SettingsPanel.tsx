@@ -9,7 +9,9 @@ const eventNames: Record<EventType, string> = {
   MULTIKILL_WINDOW: '킬 교환',
   DRAGON: '드래곤',
   TOWER: '타워',
-  KILL_DELTA: '일반 킬',
+  PLAYER_KILL: '선수 킬',
+  PLAYER_DEATH: '선수 사망',
+  KILL_DELTA: '팀 킬 (선수 정보 없음)',
 };
 interface Props {
   settings: UserSettings;

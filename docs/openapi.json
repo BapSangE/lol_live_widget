@@ -342,6 +342,8 @@
             "type": "string",
             "enum": [
               "KILL_DELTA",
+              "PLAYER_KILL",
+              "PLAYER_DEATH",
               "MULTIKILL_WINDOW",
               "DRAGON",
               "BARON",

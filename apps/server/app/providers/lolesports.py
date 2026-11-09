@@ -7,7 +7,7 @@ from datetime import timedelta
 
 import httpx
 
-from app.models.contracts import MatchSummary, RawFrame, TeamState, utcnow
+from app.models.contracts import MatchSummary, PlayerState, RawFrame, TeamState, utcnow
 from app.providers.base import AccessDenied
 
 
@@ -161,6 +161,37 @@ class LoLEsportsProvider:
             }
         )
 
+    @staticmethod
+    def _players(raw, metadata, team_id):
+        names = {
+            p.get("participantId"): p.get("summonerName")
+            for p in metadata.get("participantMetadata", [])
+        }
+        result = []
+        for p in raw.get("participants", []):
+            participant_id = p.get("participantId")
+            name = names.get(participant_id)
+            if (
+                type(participant_id) is not int
+                or not 1 <= participant_id <= 10
+                or not isinstance(name, str)
+                or not name.strip()
+            ):
+                continue
+            counts = {
+                key: p[key] if type(p.get(key)) is int and p[key] >= 0 else None
+                for key in ("kills", "deaths")
+            }
+            result.append(
+                PlayerState(
+                    participant_id=participant_id,
+                    team_id=team_id,
+                    name=name.strip(),
+                    **counts,
+                )
+            )
+        return result
+
     async def get_game_frames(self, game_id, after_source_timestamp=None):
         params = {}
         if after_source_timestamp:
@@ -202,6 +233,16 @@ class LoLEsportsProvider:
                     game_time_seconds=game_time if isinstance(game_time, int) else None,
                     blue=blue,
                     red=red,
+                    players=self._players(
+                        raw.get("blueTeam", {}),
+                        metadata.get("blueTeamMetadata", {}),
+                        blue.id,
+                    )
+                    + self._players(
+                        raw.get("redTeam", {}),
+                        metadata.get("redTeamMetadata", {}),
+                        red.id,
+                    ),
                     status="ended"
                     if raw.get("gameState") == "finished"
                     else "live"

@@ -257,3 +257,62 @@ def test_actual_capture_through_collector_rest_and_sse_recovery(monkeypatch):
         ) as response:
             response.read()
             assert "event: resync_required" in response.text
+
+
+def test_player_kills_and_deaths_survive_real_feed_normalization():
+    base = load_frames()[0]
+    provider = LoLEsportsProvider("", True)
+    provider.game_matches[GAME_ID] = MatchSummary(
+        match_id=MATCH_ID, game_id=GAME_ID, blue=base.blue, red=base.red, league="lck"
+    )
+    payload = json.loads((CAPTURE / "window-05-45-20.json").read_text())
+    frames = provider._frames(payload, GAME_ID)
+    assert len(frames[0].model_dump().get("players", [])) == 10
+    detector = Detector()
+    events = [
+        e for revision, f in enumerate(frames, 1) for e in detector.process(f, revision)
+    ]
+    detailed = [e for e in events if e.type in ("PLAYER_KILL", "PLAYER_DEATH")]
+    assert {e.message_ko for e in detailed} == {
+        "GEN Ruler 사망 +1",
+        "HLE Kanavi 킬 +1",
+        "GEN Duro 킬 +1",
+        "HLE Kanavi 사망 +1",
+    }
+    assert not any(e.type == "KILL_DELTA" for e in events)
+    assert len({e.id for e in detailed}) == 4
+    assert all(e.confidence == "derived" and e.occurred_at is None for e in detailed)
+    assert detector.process(frames[-1], 999) == []
+
+
+@pytest.mark.asyncio
+async def test_named_player_events_reach_sync_and_sse_without_reemission():
+    base = load_frames()[0]
+    provider = LoLEsportsProvider("", True)
+    provider.game_matches[GAME_ID] = MatchSummary(
+        match_id=MATCH_ID, game_id=GAME_ID, blue=base.blue, red=base.red, league="lck"
+    )
+    frames = provider._frames(
+        json.loads((CAPTURE / "window-05-45-20.json").read_text()), GAME_ID
+    )
+    store = MemoryStore("live")
+    await store.ingest(frames[0])
+    cursor = (await store.sync(MATCH_ID)).stream_cursor
+    for frame in frames[1:]:
+        await store.ingest(frame)
+    snapshot = await store.sync(MATCH_ID)
+    detailed = [e for e in snapshot.events if e.type in ("PLAYER_KILL", "PLAYER_DEATH")]
+    assert {e.message_ko for e in detailed} == {
+        "GEN Ruler 사망 +1",
+        "HLE Kanavi 킬 +1",
+        "GEN Duro 킬 +1",
+        "HLE Kanavi 사망 +1",
+    }
+    streamed = [
+        m.data for m in await store.after(MATCH_ID, cursor) if m.event == "match_event"
+    ]
+    assert {
+        m["messageKo"] for m in streamed if m["type"] in ("PLAYER_KILL", "PLAYER_DEATH")
+    } == {e.message_ko for e in detailed}
+    await store.ingest(frames[-1])
+    assert (await store.sync(MATCH_ID)).events == snapshot.events

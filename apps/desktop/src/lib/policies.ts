@@ -9,8 +9,12 @@ export const eventRank: Record<EventType, number> = {
   DRAGON: 2,
   TOWER: 2,
   KILL_DELTA: 1,
+  PLAYER_KILL: 1,
+  PLAYER_DEATH: 1,
 };
 export const defaultImportant: EventType[] = [
+  'PLAYER_KILL',
+  'PLAYER_DEATH',
   'GAME_END',
   'BARON',
   'ELDER',
@@ -22,6 +26,7 @@ export const defaultImportant: EventType[] = [
 ];
 export const defaults: UserSettings = {
   schemaVersion: 1,
+  playerEventsInitialized: true,
   opacityPercent: 65,
   fontScalePercent: 100,
   brightenOnHover: false,
@@ -98,10 +103,21 @@ export function validateSettings(raw: unknown): UserSettings {
     v[k] % step === 0
       ? (v[k] as number)
       : d;
+  const importantTypes: EventType[] = Array.isArray(v.importantTypes)
+    ? v.importantTypes.filter(
+        (t): t is EventType => typeof t === 'string' && t in eventRank,
+      )
+    : [...defaultImportant];
+  if (v.playerEventsInitialized !== true) {
+    for (const type of ['PLAYER_KILL', 'PLAYER_DEATH'] as const) {
+      if (!importantTypes.includes(type)) importantTypes.push(type);
+    }
+  }
   const favorite = v.favoriteTeam as Record<string, unknown> | null;
   const p = v.widgetPosition as Record<string, unknown> | null;
   return {
     schemaVersion: 1,
+    playerEventsInitialized: true,
     opacityPercent: num('opacityPercent', 10, 100, 5, 65),
     fontScalePercent: [100, 120, 140].includes(v.fontScalePercent as number)
       ? (v.fontScalePercent as UserSettings['fontScalePercent'])
@@ -128,11 +144,7 @@ export function validateSettings(raw: unknown): UserSettings {
           )
           .slice(-50)
       : [],
-    importantTypes: Array.isArray(v.importantTypes)
-      ? v.importantTypes.filter(
-          (t): t is EventType => typeof t === 'string' && t in eventRank,
-        )
-      : [...defaultImportant],
+    importantTypes,
     alwaysOnTop: bool('alwaysOnTop', true),
     launchAtLogin: bool('launchAtLogin', false),
     theme: ['light', 'dark', 'system'].includes(v.theme as string)

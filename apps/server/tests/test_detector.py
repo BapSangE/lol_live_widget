@@ -121,3 +121,71 @@ def test_same_timestamp_null_correction_breaks_counter_continuity():
     d.process(frame(10, blue_kills=2), 2)
     assert d.process(frame(10, blue_kills=None), 3) == []
     assert d.process(frame(20, blue_kills=3), 4) == []
+
+
+def player(kills=0, deaths=0, participant_id=3, name="T1 Faker", team_id="t1"):
+    return {
+        "participant_id": participant_id,
+        "name": name,
+        "team_id": team_id,
+        "kills": kills,
+        "deaths": deaths,
+    }
+
+
+def test_player_counters_skip_baseline_duplicates_corrections_and_new_sets():
+    d = Detector()
+    assert d.process(frame(0, players=[player(5, 2)]), 1) == []
+    changed = frame(10, blue_kills=1, players=[player(6, 3)])
+    events = d.process(changed, 2)
+    assert [(e.type, e.message_ko) for e in events] == [
+        ("PLAYER_KILL", "T1 Faker 킬 +1"),
+        ("PLAYER_DEATH", "T1 Faker 사망 +1"),
+    ]
+    assert d.process(changed, 3) == []
+    assert d.process(frame(10, blue_kills=1, players=[player(5, 2)]), 4) == []
+    assert d.process(frame(20, blue_kills=1, players=[player(6, 3)]), 5) == []
+    assert d.process(frame(30, game_id="g2", players=[player(2, 1)]), 1) == []
+
+
+def test_missing_player_stats_restart_baseline_without_inventing_names_or_kills():
+    d = Detector()
+    d.process(frame(0, players=[player(2)]), 1)
+    d.process(frame(10, players=[]), 2)
+    assert d.process(frame(20, players=[player(4)]), 3) == []
+    d.process(frame(30, players=[player(None, None)]), 4)
+    assert d.process(frame(40, players=[player(6, 3)]), 5) == []
+    events = d.process(frame(50, players=[player(7, 4)]), 6)
+    assert {e.message_ko for e in events} == {"T1 Faker 킬 +1", "T1 Faker 사망 +1"}
+
+
+def test_multiple_players_are_reported_independently_with_team_fallback_for_partial_data():
+    d = Detector()
+    d.process(
+        frame(
+            0,
+            players=[
+                player(),
+                player(participant_id=8, name="GEN Chovy", team_id="gen"),
+            ],
+        ),
+        1,
+    )
+    events = d.process(
+        frame(
+            10,
+            blue_kills=2,
+            red_kills=1,
+            players=[
+                player(1, 1),
+                player(1, 1, participant_id=8, name="GEN Chovy", team_id="gen"),
+            ],
+        ),
+        2,
+    )
+    assert len([e for e in events if e.type == "PLAYER_KILL"]) == 2
+    assert len([e for e in events if e.type == "PLAYER_DEATH"]) == 2
+    assert [(e.team_id, e.message_ko) for e in events if e.type == "KILL_DELTA"] == [
+        ("t1", "T1 킬 기록 2회")
+    ]
+    assert not any("처치" in e.message_ko for e in events)

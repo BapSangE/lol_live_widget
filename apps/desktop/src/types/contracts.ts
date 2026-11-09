@@ -12,6 +12,7 @@ export interface FavoriteTeam {
 }
 export interface UserSettings {
   schemaVersion: 1;
+  playerEventsInitialized: boolean;
   opacityPercent: number;
   fontScalePercent: 100 | 120 | 140;
   brightenOnHover: boolean;

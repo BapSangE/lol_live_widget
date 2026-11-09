@@ -23,9 +23,9 @@ const ev = (type: MatchEvent['type'], id = type): MatchEvent => ({
 });
 describe('ticker', () => {
   it('selects strongest and never promotes equal/lower priority', () => {
-    expect(chooseTicker(null, [ev('TOWER'), ev('BARON')], ['TOWER', 'BARON'])?.type).toBe(
-      'BARON',
-    );
+    expect(
+      chooseTicker(null, [ev('TOWER'), ev('BARON')], ['TOWER', 'BARON'])?.type,
+    ).toBe('BARON');
     expect(chooseTicker(ev('BARON'), [ev('TOWER')], ['TOWER', 'BARON'])?.type).toBe(
       'BARON',
     );
@@ -47,7 +47,12 @@ describe('ticker', () => {
   });
   it('expands upward at bottom and clamps negative-origin monitor', () => {
     expect(
-      geometry({ x: 200, y: 950 }, true, { x: 0, y: 0, width: 1920, height: 1040 }).y,
+      geometry({ x: 200, y: 950 }, true, {
+        x: 0,
+        y: 0,
+        width: 1920,
+        height: 1040,
+      }).y,
     ).toBe(612);
     const r = geometry({ x: -5, y: 20 }, true, {
       x: -1280,
@@ -86,8 +91,11 @@ describe('ticker', () => {
 });
 it('does not reinterpret an unknown settings version as v1', () => {
   expect(
-    validateSettings({ schemaVersion: 2, opacityPercent: 35, launchAtLogin: true })
-      .opacityPercent,
+    validateSettings({
+      schemaVersion: 2,
+      opacityPercent: 35,
+      launchAtLogin: true,
+    }).opacityPercent,
   ).toBe(65);
 });
 
@@ -109,7 +117,25 @@ it('keeps enlarged windows inside the monitor and preserves their shared bottom 
   expect(compact).toEqual({ x: 1570, y: 953, width: 350, height: 87 });
   const expanded = geometry({ x: compact.x, y: compact.y }, true, area, 560, 87);
   expect(expanded).toEqual({ x: 1570, y: 480, width: 350, height: 560 });
-  expect(geometry({ x: 0, y: 30 }, true, { ...area, height: 300 }, 560, 87).height).toBe(
-    300,
+  expect(
+    geometry({ x: 0, y: 30 }, true, { ...area, height: 300 }, 560, 87).height,
+  ).toBe(300);
+});
+
+it('enables new player alerts once while preserving existing and later user choices', () => {
+  const migrated = validateSettings({
+    schemaVersion: 1,
+    opacityPercent: 35,
+    importantTypes: ['BARON'],
+  });
+  expect(migrated.opacityPercent).toBe(35);
+  expect(migrated.importantTypes).toEqual(['BARON', 'PLAYER_KILL', 'PLAYER_DEATH']);
+  const disabled = validateSettings({ ...migrated, importantTypes: ['BARON'] });
+  expect(disabled.importantTypes).toEqual(['BARON']);
+  expect(chooseTicker(null, [ev('PLAYER_KILL')], migrated.importantTypes)?.type).toBe(
+    'PLAYER_KILL',
   );
+  expect(
+    chooseTicker(ev('BARON'), [ev('PLAYER_DEATH')], migrated.importantTypes)?.type,
+  ).toBe('BARON');
 });

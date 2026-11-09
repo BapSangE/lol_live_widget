@@ -16,3 +16,7 @@ SSE 전송 ID `epoch:sequence`와 사건 `MatchEvent.id`는 다릅니다. state 
 DRAGON_SOUL을 계약에 추가했고 일반 킬 이름은 KILL_DELTA로 통일했습니다. sourceError는 접근 거절/429/공급원 실패를 정확히 표시하는 선택적 필드입니다. 재생 모드 sourceMode는 반드시 UI에 표시합니다.
 
 파생 사건의 occurredAt은 null입니다. sourceTimestamp는 관측 시각이므로 실제 사건 발생 시각으로 단정하지 않습니다. sourceRevision과 observedAt으로 관측 근거를 추적합니다.
+
+## 선수별 킬·사망 (v0.2.2)
+
+`PLAYER_KILL`과 `PLAYER_DEATH`는 선수별 누적 K/D 변화에서 파생한 기록입니다. `messageKo`는 공급원의 선수 이름과 변화량을 표시합니다(예: `T1 Faker 킬 +1`). 상대 선수와의 처치 연결은 제공하지 않습니다. `confidence=derived`, `occurredAt=null`을 유지합니다. 선수 정보가 불완전하면 팀 합계 `KILL_DELTA`를 유지하고, 선수 변화량 합계가 팀 킬 변화량을 모두 설명하면 중복 팀 기록을 생략합니다.

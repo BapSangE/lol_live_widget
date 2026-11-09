@@ -13,6 +13,7 @@ class Detector:
     def __init__(self):
         self.previous: dict[str, RawFrame] = {}
         self.highwater: dict[tuple[str, str, str], int] = {}
+        self.player_highwater: dict[tuple[str, int, str], int] = {}
         self.leader: dict[str, int] = {}
         self.candidate: dict[str, tuple[int, int]] = {}
         self.confirmed: set[tuple[str, str, str | None]] = set()
@@ -37,7 +38,7 @@ class Detector:
             self._seed(frame)
             self.leader[game] = self._sign(self._gold(frame))
             return []
-        events: list[MatchEvent] = []
+        events, player_kills = self._player_events(frame, revision)
         kills = [0, 0]
         seconds = (frame.source_timestamp - previous.source_timestamp).total_seconds()
         for index, team in enumerate((frame.blue, frame.red)):
@@ -58,6 +59,10 @@ class Detector:
                 delta = value - old if old is not None else 0
                 if 0 < delta <= cap:
                     suffix = f" {delta}회" if delta > 1 else ""
+                    if field == "kills":
+                        kills[index] = delta
+                        if player_kills.get(team.id, 0) == delta:
+                            continue
                     events.append(
                         self._event(
                             frame,
@@ -68,8 +73,6 @@ class Detector:
                             len(events),
                         )
                     )
-                    if field == "kills":
-                        kills[index] = delta
         window = self.kill_windows.setdefault(game, deque())
         cutoff = frame.source_timestamp - timedelta(seconds=20)
         while window and window[0][0] <= cutoff:
@@ -148,7 +151,46 @@ class Detector:
                 )
         return events
 
+    def _player_events(self, frame, revision, baseline=False):
+        game = frame.game_id
+        present = {p.participant_id for p in frame.players}
+        for key in list(self.player_highwater):
+            if key[0] == game and key[1] not in present:
+                del self.player_highwater[key]
+        events = []
+        kills = {}
+        for player in frame.players:
+            for field, kind, label in (
+                ("kills", "PLAYER_KILL", "킬"),
+                ("deaths", "PLAYER_DEATH", "사망"),
+            ):
+                key = (game, player.participant_id, field)
+                value = getattr(player, field)
+                old = self.player_highwater.get(key)
+                if value is None:
+                    self.player_highwater.pop(key, None)
+                    continue
+                self.player_highwater[key] = max(
+                    value, old if old is not None else value
+                )
+                delta = value - old if old is not None else 0
+                if not baseline and 0 < delta <= 10:
+                    events.append(
+                        self._event(
+                            frame,
+                            revision,
+                            kind,
+                            player.team_id,
+                            f"{player.name} {label} +{delta}",
+                            len(events),
+                        )
+                    )
+                    if field == "kills":
+                        kills[player.team_id] = kills.get(player.team_id, 0) + delta
+        return events, kills
+
     def _seed(self, frame: RawFrame):
+        self._player_events(frame, 0, baseline=True)
         for team in (frame.blue, frame.red):
             for field in ("kills", "towers", "dragons", "barons"):
                 value = getattr(team, field)
@@ -192,7 +234,11 @@ class Detector:
             team_id=team,
             priority="critical"
             if kind == "GAME_END"
-            else ("normal" if kind == "KILL_DELTA" else "important"),
+            else (
+                "normal"
+                if kind in ("KILL_DELTA", "PLAYER_KILL", "PLAYER_DEATH")
+                else "important"
+            ),
             message_ko=message,
             confidence=confidence,
             source_revision=revision,
