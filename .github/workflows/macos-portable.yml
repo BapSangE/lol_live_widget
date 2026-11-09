@@ -1,0 +1,40 @@
+name: Build portable macOS widget
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  portable:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+      - run: npm --prefix apps/desktop ci
+      - name: Prepare bundled server dependencies
+        run: |
+          python -m venv .venv312
+          .venv312/bin/python -m pip install -e 'apps/server[test]' 'pyinstaller>=6.10,<7'
+      - run: .venv312/bin/python -m pytest apps/server/tests
+      - run: npm --prefix apps/desktop test -- --run
+      - run: .venv312/bin/python scripts/build_macos_portable.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LoL-Live-Widget-macOS-arm64-portable
+          path: apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: macos-portable-diagnostic-logs
+          path: build/macos/smoke-logs/*
