@@ -16,7 +16,7 @@
 
 ## 다운로드
 
-> **소스 수정 현황 (2026-11-05):** `main`에 라이브 경기 탐색·통계 조회 지연·새 세트 대기 처리 수정이 반영되었습니다. 아래 기존 `v0.2.0` / `v0.2.0-macos.1` 배포 파일에는 이 수정이 포함되지 않습니다. Windows EXE와 macOS 앱은 각 플랫폼에서 별도로 빌드·검증한 뒤 배포합니다.
+> **v0.2.1 (2026-11-09):** 라이브 경기 탐색·통계 조회 지연·새 세트 대기 처리를 수정했습니다. Windows x64 EXE와 Mac arm64 DMG를 각 운영체제에서 별도로 빌드·검증해 배포합니다. 업데이트할 때는 기존 앱을 완전히 종료하고 새 파일로 교체하세요.
 
 **설치 도구나 API 키 없이 파일을 받아 바로 실행하세요.**
 
@@ -198,6 +198,14 @@ npm --prefix apps/desktop run generate:contracts
 </details>
 
 ## 검증 현황
+
+**0.2.1 · 진행 중 경기 탐색과 통계 수신 수정**
+
+- 일정 페이지에서 빠진 라이브 경기를 공식 웹의 공개 조회로 함께 수집합니다.
+- 통계 조회 구간 끝이 최소 50초 이전이 되도록 요청하고, 새 세트의 HTTP 204 응답은 정상 대기로 처리합니다.
+- Windows x64 EXE와 Mac arm64 DMG를 같은 소스에서 각 운영체제의 GitHub Actions로 따로 빌드했습니다. 서버 테스트 50개, UI 테스트와 내장 서버 smoke test를 통과했으며, Mac 앱 서명과 DMG 무결성 검사도 통과했습니다.
+- [v0.2.1 다운로드·SHA-256](https://github.com/BapSangE/lol_live_widget/releases/tag/v0.2.1) · [Windows 빌드](https://github.com/BapSangE/lol_live_widget/actions/runs/42539786226) · [Mac 빌드](https://github.com/BapSangE/lol_live_widget/actions/runs/42539788353)
+- 전체 GUI와 경기 시작부터 종료까지의 연속 실기기 검증은 별도입니다. Mac은 ad-hoc 서명이며 Apple 공증은 없습니다.
 
 **0.2.0 · 응원 팀 팝업 알림과 경기 자동 전환 추가**
 

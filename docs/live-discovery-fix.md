@@ -45,3 +45,12 @@ The collector source is shared by Windows and macOS. Packaging stays separate:
 | macOS arm64 | `scripts/build_macos_portable.py` | Local repaired app packaged and signature verified. Final runtime checks have the limitations above. Existing GitHub DMG is unchanged. |
 
 Do not label an older platform binary as containing this fix. Publish rebuilt platform artifacts only with their own build and validation evidence.
+
+## Released v0.2.1 (2026-11-09)
+
+The earlier local sandbox limitations and unreleased-binary status above are historical. Both platforms have now been built and smoke-tested in native GitHub Actions environments from fe4cd5679055f2cbbae6399f4f645e569b304412.
+
+- Windows x64 EXE: https://github.com/BapSangE/lol_live_widget/actions/runs/42539786226 — build, tests, and frozen-server smoke test passed.
+- macOS arm64 DMG: https://github.com/BapSangE/lol_live_widget/actions/runs/42539788353 — build, tests, frozen-server smoke test, app signature verification, and DMG verification passed.
+- Release: https://github.com/BapSangE/lol_live_widget/releases/tag/v0.2.1 — separate EXE and DMG assets with SHA256SUMS.txt.
+- These checks establish native packaging and server startup, not full GUI or a complete live series observed on both platforms.
