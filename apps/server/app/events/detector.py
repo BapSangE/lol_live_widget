@@ -229,6 +229,7 @@ class Detector:
             game_id=frame.game_id,
             type=kind,
             game_time_seconds=frame.game_time_seconds,
+            estimated_game_time_seconds=frame.estimated_game_time_seconds,
             occurred_at=frame.source_timestamp if confidence == "confirmed" else None,
             observed_at=utcnow(),
             team_id=team,

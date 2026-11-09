@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useWidgetStore } from '../state/widgetStore';
-import { formatTime, stat } from '../lib/policies';
+import { formatTime, formatGameTime, estimatedClockHint, stat } from '../lib/policies';
 import type { MatchEvent, MatchState, MatchSummary } from '../types/contracts';
 const names: Record<string, string> = {
   PLAYER_KILL: '선수 킬',
@@ -80,13 +80,18 @@ export function ExpandedPanel({
             {state?.status === 'ended'
               ? '경기 종료'
               : state
-                ? `${state.gameNumber || '—'}세트 · ${formatTime(state.gameTimeSeconds)}`
+                ? `${state.gameNumber || '—'}세트 · ${formatGameTime(state.gameTimeSeconds, state.estimatedGameTimeSeconds)}`
                 : '경기 대기'}
           </span>
           <span className={`connection ${state?.connection || 'offline'}`}>
             {replay && !playback ? '모의 데이터' : status}
           </span>
         </div>
+        {state?.gameTimeSeconds == null && state?.estimatedGameTimeSeconds != null && (
+          <p className="unsupported">
+            추정 시간 · 경기 전 대기·일시정지로 실제 시계와 다를 수 있음
+          </p>
+        )}
         {playback && (
           <p className="unsupported">
             실제 경기 구간 · 재생 {formatTime(Math.floor(playback.elapsedSeconds))} /{' '}
@@ -177,7 +182,15 @@ export function ExpandedPanel({
           {currentEvents.length ? (
             currentEvents.map((e) => (
               <article className={`log-row ${e.priority}`} key={e.id}>
-                <time>{formatTime(e.gameTimeSeconds)}</time>
+                <time
+                  title={
+                    e.gameTimeSeconds == null && e.estimatedGameTimeSeconds != null
+                      ? estimatedClockHint
+                      : undefined
+                  }
+                >
+                  {formatGameTime(e.gameTimeSeconds, e.estimatedGameTimeSeconds)}
+                </time>
                 <div>
                   <span className="event-type">{names[e.type]}</span>
                   <p>{e.messageKo}</p>

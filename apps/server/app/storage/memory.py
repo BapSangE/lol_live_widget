@@ -88,6 +88,7 @@ class MemoryStore:
                 red=frame.red,
                 game_number=frame.game_number,
                 game_time_seconds=frame.game_time_seconds,
+                estimated_game_time_seconds=frame.estimated_game_time_seconds,
                 source_timestamp=frame.source_timestamp,
                 received_at=now if advancing else previous_state.received_at,
                 revision=revision,

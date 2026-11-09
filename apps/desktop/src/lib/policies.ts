@@ -173,3 +173,12 @@ export const formatTime = (seconds: number | null) =>
         .padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
 export const stat = (value: number | null | undefined) =>
   value == null ? '—' : value.toLocaleString('ko-KR');
+
+export const estimatedClockHint =
+  '통계 피드 첫 프레임 기준 추정값입니다. 경기 전 대기·일시정지로 실제 게임 시계와 다를 수 있습니다.';
+export const formatGameTime = (seconds: number | null, estimated?: number | null) =>
+  seconds !== null
+    ? formatTime(seconds)
+    : estimated != null
+      ? `추정 ${formatTime(estimated)}`
+      : '--:--';

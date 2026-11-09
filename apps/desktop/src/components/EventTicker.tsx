@@ -1,5 +1,5 @@
 import type { MatchEvent } from '../types/contracts';
-import { formatTime } from '../lib/policies';
+import { formatGameTime, estimatedClockHint } from '../lib/policies';
 export function EventTicker({ event }: { event: MatchEvent }) {
   return (
     <span className="ticker" title={event.messageKo}>
@@ -7,7 +7,16 @@ export function EventTicker({ event }: { event: MatchEvent }) {
         ◆
       </span>
       <span className="ellipsis">{event.messageKo}</span>
-      <span className="time">{formatTime(event.gameTimeSeconds)}</span>
+      <span
+        className="time"
+        title={
+          event.gameTimeSeconds == null && event.estimatedGameTimeSeconds != null
+            ? estimatedClockHint
+            : undefined
+        }
+      >
+        {formatGameTime(event.gameTimeSeconds, event.estimatedGameTimeSeconds)}
+      </span>
     </span>
   );
 }

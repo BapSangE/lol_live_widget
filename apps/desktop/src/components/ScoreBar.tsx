@@ -1,6 +1,6 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { native } from '../lib/native';
-import { formatTime } from '../lib/policies';
+import { formatGameTime, estimatedClockHint } from '../lib/policies';
 import type { MatchEvent, MatchState } from '../types/contracts';
 import { EventTicker } from './EventTicker';
 interface Props {
@@ -26,7 +26,10 @@ export function ScoreBar({ state, ticker, status, onExpand }: Props) {
         ⠿
       </span>
       <button className="score-content" aria-label="경기 상세 열기" onClick={onExpand}>
-        <span className={`status-dot ${state?.connection || 'offline'}`} title={status} />
+        <span
+          className={`status-dot ${state?.connection || 'offline'}`}
+          title={status}
+        />
         {ticker ? (
           <EventTicker event={ticker} />
         ) : state ? (
@@ -36,7 +39,16 @@ export function ScoreBar({ state, ticker, status, onExpand }: Props) {
               {state.blue.seriesWins} : {state.red.seriesWins}
             </strong>
             <span className="team-name">{state.red.shortName}</span>
-            <span className="time">{formatTime(state.gameTimeSeconds)}</span>
+            <span
+              className="time"
+              title={
+                state.gameTimeSeconds == null && state.estimatedGameTimeSeconds != null
+                  ? estimatedClockHint
+                  : undefined
+              }
+            >
+              {formatGameTime(state.gameTimeSeconds, state.estimatedGameTimeSeconds)}
+            </span>
           </span>
         ) : (
           <span className="empty-copy">진행 중 경기 없음</span>

@@ -103,6 +103,8 @@ async def test_live_windows_advance_and_reach_store_without_fabricating_game_clo
         assert "x-api-key" not in request.headers
         if request.url.host == "lolesports.com":
             return httpx.Response(200, text=page(event()))
+        if not request.url.params.get("startingTime"):
+            return httpx.Response(200, json={"frames": []})
         stamp = request.url.params["startingTime"]
         starts.append(stamp)
         second = datetime.fromisoformat(stamp).second
@@ -215,6 +217,8 @@ async def test_completed_schedule_cannot_stop_before_terminal_feed_frame(monkeyp
             return httpx.Response(200, json={"data": {"esports": {"events": []}}})
         if request.url.host == "lolesports.com":
             return httpx.Response(200, text=page(event(state[0])))
+        if not request.url.params.get("startingTime"):
+            return httpx.Response(200, json={"frames": []})
         stamp = request.url.params["startingTime"]
         finished = stamp == "2026-10-16T00:00:40Z"
         return httpx.Response(
@@ -286,6 +290,8 @@ async def test_empty_feed_gap_does_not_permanently_trap_scan_cursor(monkeypatch)
             return httpx.Response(200, json={"data": {"esports": {"events": []}}})
         if request.url.host == "lolesports.com":
             return httpx.Response(200, text=page(event()))
+        if not request.url.params.get("startingTime"):
+            return httpx.Response(200, json={"frames": []})
         stamp = request.url.params["startingTime"]
         resumed = datetime.fromisoformat(stamp) >= datetime(
             2026, 10, 16, 0, 2, tzinfo=UTC
@@ -334,6 +340,8 @@ def test_public_mode_bootstraps_rest_without_api_key(monkeypatch):
         assert "x-api-key" not in request.headers
         if request.url.host == "lolesports.com":
             return httpx.Response(200, text=page(event()))
+        if not request.url.params.get("startingTime"):
+            return httpx.Response(200, json={"frames": []})
         stamp = request.url.params["startingTime"]
         return httpx.Response(
             200,
@@ -399,6 +407,8 @@ async def test_live_match_missing_from_html_reaches_store_and_refreshes_next_gam
             return httpx.Response(200, json=payload)
         if request.url.host == "lolesports.com":
             return httpx.Response(200, text=page(*schedule))
+        if not request.url.params.get("startingTime"):
+            return httpx.Response(200, json={"frames": []})
         return httpx.Response(
             200,
             json={
@@ -477,6 +487,8 @@ async def test_live_windows_respect_feed_fifty_second_broadcast_delay(monkeypatc
             return httpx.Response(200, json={"data": {"esports": {"events": []}}})
         if request.url.host == "lolesports.com":
             return httpx.Response(200, text=page(event()))
+        if not request.url.params.get("startingTime"):
+            return httpx.Response(200, json={"frames": []})
         start = datetime.fromisoformat(request.url.params["startingTime"])
         if start + timedelta(seconds=10) > now - timedelta(seconds=50):
             return httpx.Response(400, json={"message": "window ahead of broadcast"})
@@ -547,3 +559,117 @@ def test_player_normalization_requires_source_names_and_preserves_missing_counte
     assert len(players) == 1
     assert players[0].name == "T1 Zeus"
     assert players[0].kills is None and players[0].deaths is None
+
+
+@pytest.mark.asyncio
+async def test_estimated_clock_uses_first_feed_frame_when_joining_midgame_and_resets_per_set(
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        lolesports, "utcnow", lambda: datetime(2026, 11, 9, 0, 11, tzinfo=UTC)
+    )
+    bootstraps = []
+
+    async def respond(request):
+        game_id = request.url.path.rsplit("/", 1)[-1]
+        stamp = request.url.params.get("startingTime")
+        if not stamp:
+            bootstraps.append(game_id)
+            stamp = (
+                "2026-11-09T00:00:00Z" if game_id == "g1" else "2026-11-09T00:05:00Z"
+            )
+        return httpx.Response(
+            200,
+            json={
+                "frames": [
+                    {
+                        "rfc460Timestamp": stamp,
+                        "gameState": "in_game",
+                        "blueTeam": {"totalKills": 1},
+                        "redTeam": {"totalKills": 0},
+                    }
+                ]
+            },
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        p = source(client)
+        summary = p._summary(
+            {
+                "id": "m",
+                "state": "inProgress",
+                "match": {
+                    "teams": [{"id": "b", "name": "Blue"}, {"id": "r", "name": "Red"}]
+                },
+            }
+        )
+        p.game_matches.update({"g1": summary, "g2": summary})
+        frames = await p.get_game_frames("g1")
+        assert frames[-1].game_time_seconds is None
+        assert frames[-1].model_dump().get("estimated_game_time_seconds") == 600
+        await p.get_game_frames("g1")
+        next_set = await p.get_game_frames("g2")
+        assert next_set[-1].model_dump().get("estimated_game_time_seconds") == 300
+        assert bootstraps == ["g1", "g2"]
+        p.game_starts["g1"] = datetime(2026, 11, 9, tzinfo=UTC)
+        exact = p._frames(
+            {
+                "frames": [
+                    {"rfc460Timestamp": "2026-11-09T00:10:00Z", "gameTimeSeconds": 123}
+                ]
+            },
+            "g1",
+        )[0]
+        assert exact.game_time_seconds == 123
+        assert exact.estimated_game_time_seconds is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("bootstrap_status", [400, 500, None])
+async def test_optional_clock_failure_does_not_block_current_statistics(
+    monkeypatch, bootstrap_status
+):
+    monkeypatch.setattr(
+        lolesports, "utcnow", lambda: datetime(2026, 11, 9, 0, 11, tzinfo=UTC)
+    )
+
+    async def respond(request):
+        stamp = request.url.params.get("startingTime")
+        if not stamp:
+            if bootstrap_status is not None:
+                return httpx.Response(bootstrap_status)
+            return httpx.Response(
+                200, json={"frames": [{"rfc460Timestamp": "invalid"}]}
+            )
+        return httpx.Response(
+            200,
+            json={
+                "frames": [{"rfc460Timestamp": stamp, "blueTeam": {"totalKills": 3}}]
+            },
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        p = source(client)
+        p.game_matches["g1"] = p._summary(
+            {
+                "id": "m",
+                "state": "inProgress",
+                "match": {"teams": [{"id": "b"}, {"id": "r"}]},
+            }
+        )
+        frames = await p.get_game_frames("g1")
+        assert frames[-1].blue.kills == 3
+        assert frames[-1].estimated_game_time_seconds is None
+        assert (await p.health())["availability"] == "available"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("status", [403, 429])
+async def test_optional_clock_still_respects_access_denial_and_rate_limits(status):
+    async def respond(request):
+        return httpx.Response(status)
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+        p = source(client)
+        with pytest.raises(AccessDenied if status == 403 else httpx.HTTPStatusError):
+            await p.get_game_frames("g1")

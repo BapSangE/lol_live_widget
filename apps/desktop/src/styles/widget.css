@@ -212,6 +212,7 @@ button:hover {
   font-size: calc(9px * var(--text-scale, 1));
 }
 .compact-record time {
+  white-space: nowrap;
   flex-shrink: 0;
   color: var(--muted);
   font-size: calc(9px * var(--text-scale, 1));
@@ -410,6 +411,7 @@ button:hover {
   overflow-anchor: auto;
 }
 .log-row time {
+  white-space: nowrap;
   flex-shrink: 0;
   font-size: calc(11px * var(--text-scale, 1));
   color: var(--muted);

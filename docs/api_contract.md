@@ -20,3 +20,7 @@ DRAGON_SOUL을 계약에 추가했고 일반 킬 이름은 KILL_DELTA로 통일�
 ## 선수별 킬·사망 (v0.2.2)
 
 `PLAYER_KILL`과 `PLAYER_DEATH`는 선수별 누적 K/D 변화에서 파생한 기록입니다. `messageKo`는 공급원의 선수 이름과 변화량을 표시합니다(예: `T1 Faker 킬 +1`). 상대 선수와의 처치 연결은 제공하지 않습니다. `confidence=derived`, `occurredAt=null`을 유지합니다. 선수 정보가 불완전하면 팀 합계 `KILL_DELTA`를 유지하고, 선수 변화량 합계가 팀 킬 변화량을 모두 설명하면 중복 팀 기록을 생략합니다.
+
+## 추정 경과 시간
+
+`MatchState`와 `MatchEvent`의 선택적 `estimatedGameTimeSeconds`는 세트의 첫 피드 프레임과 현재 데이터 프레임 사이의 벽시계 차이입니다. 공식 게임 시계인 `gameTimeSeconds`와 별개이며, 해당 값이 있으면 공식 값을 우선 표시합니다. UI에는 반드시 `추정`을 붙입니다. 경기 전 대기·일시정지는 빼지 않으므로 실제 게임 시계와 차이가 날 수 있습니다. 기준점을 얻지 못하면 null로 두고 통계 수집은 계속하며, 403·429 제한은 그대로 준수합니다.

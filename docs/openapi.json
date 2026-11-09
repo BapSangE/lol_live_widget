@@ -366,6 +366,18 @@
             ],
             "title": "Gametimeseconds"
           },
+          "estimatedGameTimeSeconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimatedgametimeseconds"
+          },
           "occurredAt": {
             "anyOf": [
               {
@@ -505,6 +517,18 @@
               }
             ],
             "title": "Gametimeseconds"
+          },
+          "estimatedGameTimeSeconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimatedgametimeseconds"
           },
           "sourceTimestamp": {
             "anyOf": [

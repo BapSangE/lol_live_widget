@@ -189,3 +189,25 @@ def test_multiple_players_are_reported_independently_with_team_fallback_for_part
         ("t1", "T1 킬 기록 2회")
     ]
     assert not any("처치" in e.message_ko for e in events)
+
+
+async def test_estimated_time_is_preserved_in_event_and_sync_without_claiming_official_time():
+    from app.storage.memory import MemoryStore
+
+    store = MemoryStore("live")
+    first = frame(0, players=[player()])
+    first = first.model_copy(
+        update={"game_time_seconds": None, "estimated_game_time_seconds": 60}
+    )
+    next_frame = frame(10, blue_kills=1, players=[player(1)]).model_copy(
+        update={"game_time_seconds": None, "estimated_game_time_seconds": 70}
+    )
+    await store.ingest(first)
+    await store.ingest(next_frame)
+    snapshot = await store.sync("m")
+    assert snapshot.state.game_time_seconds is None
+    assert snapshot.state.estimated_game_time_seconds == 70
+    event = next(e for e in snapshot.events if e.type == "PLAYER_KILL")
+    assert event.game_time_seconds is None
+    assert event.estimated_game_time_seconds == 70
+    assert event.model_dump(by_alias=True)["estimatedGameTimeSeconds"] == 70

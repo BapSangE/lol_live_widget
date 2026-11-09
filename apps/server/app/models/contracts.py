@@ -68,6 +68,7 @@ class RawFrame(Contract):
     game_id: str = Field(min_length=1)
     source_timestamp: datetime
     game_time_seconds: int | None = Field(default=None, ge=0)
+    estimated_game_time_seconds: int | None = Field(default=None, ge=0)
     blue: TeamState
     red: TeamState
     status: MatchStatus = "live"
@@ -96,6 +97,7 @@ class MatchState(Contract):
     red: TeamState
     game_number: int | None
     game_time_seconds: int | None
+    estimated_game_time_seconds: int | None = Field(default=None, ge=0)
     source_timestamp: datetime | None
     received_at: datetime
     revision: int = Field(ge=0)
@@ -108,6 +110,7 @@ class MatchEvent(Contract):
     game_id: str
     type: EventType
     game_time_seconds: int | None
+    estimated_game_time_seconds: int | None = Field(default=None, ge=0)
     occurred_at: datetime | None
     observed_at: datetime
     team_id: str | None

@@ -14,3 +14,9 @@ Verification:
 - Independent code review found no definite correctness defects. Existing normalized historical replay files do not contain player data, so those older replay fixtures still use team events. New raw-feed captures exercise named events.
 
 Scope: no new external API, dependency, exact kill attribution, new ticker queue, or champion UI. Windows and macOS builds use the same collector with separate native packaging.
+
+## Estimated clock addition
+
+User chose an estimated elapsed clock with explicit error labeling. Each game's initial untimestamped feed request supplies its first source frame as the anchor. Current data-frame timestamp minus anchor becomes `estimatedGameTimeSeconds`; the UI never substitutes this into the official game clock field. All four time surfaces show the estimate label; the expanded panel and tooltips warn that pre-game waiting and pauses are included. The displayed clock follows received data rather than continuing to tick while disconnected. Exact source clocks take precedence.
+
+An independent review identified optional-clock bootstrap failures blocking statistics. This was corrected with failing regression tests: malformed starts and HTTP 400/500 do not block current frames, while access denial and rate limits still stop polling. Final local checks: 63 server tests and 33 UI tests passed.

@@ -1,4 +1,4 @@
-import { formatTime } from '../lib/policies';
+import { formatGameTime, estimatedClockHint } from '../lib/policies';
 import type { MatchEvent, MatchState } from '../types/contracts';
 
 interface Props {
@@ -9,9 +9,13 @@ interface Props {
 
 export function CompactRecord({ state, events, onExpand }: Props) {
   const latest = state
-    ? events.find((event) => event.matchId === state.matchId && event.gameId === state.gameId)
+    ? events.find(
+        (event) => event.matchId === state.matchId && event.gameId === state.gameId,
+      )
     : undefined;
-  const message = latest?.messageKo || (state ? '새로운 경기 기록을 기다리는 중' : '진행 중 경기 없음');
+  const message =
+    latest?.messageKo ||
+    (state ? '새로운 경기 기록을 기다리는 중' : '진행 중 경기 없음');
   return (
     <button
       className={`compact-record${latest ? '' : ' empty'}`}
@@ -20,9 +24,12 @@ export function CompactRecord({ state, events, onExpand }: Props) {
       onClick={onExpand}
     >
       <span className="compact-record-label">최근</span>
-      {latest?.gameTimeSeconds != null && (
-        <time>{formatTime(latest.gameTimeSeconds)}</time>
-      )}
+      {latest &&
+        (latest.gameTimeSeconds != null || latest.estimatedGameTimeSeconds != null) && (
+          <time title={latest.gameTimeSeconds == null ? estimatedClockHint : undefined}>
+            {formatGameTime(latest.gameTimeSeconds, latest.estimatedGameTimeSeconds)}
+          </time>
+        )}
       <span className="compact-record-message" aria-live="polite" aria-atomic="true">
         {message}
       </span>

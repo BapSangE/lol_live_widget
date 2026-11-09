@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import httpx
 
@@ -22,6 +22,7 @@ class LoLEsportsProvider:
         self.client = client or httpx.AsyncClient(timeout=5)
         self.matches = {}
         self.game_matches = {}
+        self.game_starts: dict[str, datetime] = {}
         self.latency = 0
         self.errors = 0
         self.last_error = None
@@ -202,7 +203,31 @@ class LoLEsportsProvider:
             )
             params["startingTime"] = aligned.isoformat().replace("+00:00", "Z")
         payload = await self._request(f"window/{game_id}", params, feed=True)
+        if after_source_timestamp is None:
+            self._remember_start(game_id, payload)
         return self._frames(payload, game_id)
+
+    def _remember_start(self, game_id, payload):
+        if not isinstance(payload, dict) or not isinstance(payload.get("frames"), list):
+            raise TypeError("Invalid first-frame payload")
+        if any(
+            not isinstance(f, dict)
+            or (
+                f.get("rfc460Timestamp") is not None
+                and not isinstance(f["rfc460Timestamp"], str)
+            )
+            for f in payload["frames"]
+        ):
+            raise TypeError("Invalid first-frame timestamp")
+        stamps = [
+            datetime.fromisoformat(f["rfc460Timestamp"])
+            for f in payload.get("frames", [])
+            if f.get("rfc460Timestamp")
+        ]
+        if stamps:
+            if any(t.tzinfo is None for t in stamps):
+                raise ValueError("Feed start timestamp must include timezone")
+            self.game_starts[game_id] = min(stamps)
 
     def _frames(self, payload, game_id):
         summary = self.game_matches[game_id]
@@ -225,12 +250,24 @@ class LoLEsportsProvider:
             blue = self._stats(raw.get("blueTeam", {}), mapped("blue", summary.blue))
             red = self._stats(raw.get("redTeam", {}), mapped("red", summary.red))
             game_time = raw.get("gameTimeSeconds")
+            estimated = None
+            if game_time is None and game_id in self.game_starts:
+                estimated = max(
+                    0,
+                    int(
+                        (
+                            datetime.fromisoformat(raw["rfc460Timestamp"])
+                            - self.game_starts[game_id]
+                        ).total_seconds()
+                    ),
+                )
             result.append(
                 RawFrame(
                     match_id=summary.match_id,
                     game_id=game_id,
                     source_timestamp=raw["rfc460Timestamp"],
                     game_time_seconds=game_time if isinstance(game_time, int) else None,
+                    estimated_game_time_seconds=estimated,
                     blue=blue,
                     red=red,
                     players=self._players(
@@ -452,6 +489,17 @@ class PublicLoLEsportsProvider(LoLEsportsProvider):
         # Each requested window contains only ten seconds, so overlap must be
         # followed by additional windows to advance beyond the previous cursor.
         # A ten-second window must END at least fifty seconds before now.
+        if game_id not in self.game_starts:
+            try:
+                initial = await self._request(f"window/{game_id}", feed=True)
+                self._remember_start(game_id, initial)
+            except (httpx.HTTPError, ValueError, TypeError) as error:
+                # Clock estimation is optional; access denial and rate limits still stop polling.
+                if (
+                    isinstance(error, httpx.HTTPStatusError)
+                    and error.response.status_code == 429
+                ):
+                    raise
         latest = utcnow() - timedelta(seconds=60)
         start = after_source_timestamp or (latest - timedelta(seconds=10))
         if game_id in self.scan_next:

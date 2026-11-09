@@ -117,3 +117,29 @@ it('shows player kill and death names in history and exposes their notification 
   expect(screen.getByRole('checkbox', { name: '선수 킬' })).toBeChecked();
   expect(screen.getByRole('checkbox', { name: '선수 사망' })).toBeChecked();
 });
+
+it('labels a feed-derived clock as estimated and prefers an official clock', () => {
+  const estimated = {
+    ...demoFrames[0],
+    gameTimeSeconds: null,
+    estimatedGameTimeSeconds: 1123,
+  };
+  const { rerender } = render(
+    <ScoreBar state={estimated} ticker={null} status="라이브" onExpand={() => {}} />,
+  );
+  expect(screen.getByText('추정 18:43')).toBeVisible();
+  expect(screen.getByText('추정 18:43')).toHaveAttribute(
+    'title',
+    expect.stringContaining('일시정지'),
+  );
+  rerender(
+    <ScoreBar
+      state={{ ...estimated, gameTimeSeconds: 12 }}
+      ticker={null}
+      status="라이브"
+      onExpand={() => {}}
+    />,
+  );
+  expect(screen.getByText('00:12')).toBeVisible();
+  expect(screen.queryByText(/추정/)).not.toBeInTheDocument();
+});

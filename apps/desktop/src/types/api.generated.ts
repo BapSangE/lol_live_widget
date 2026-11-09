@@ -137,6 +137,8 @@ export interface components {
             type: "KILL_DELTA" | "PLAYER_KILL" | "PLAYER_DEATH" | "MULTIKILL_WINDOW" | "DRAGON" | "BARON" | "ELDER" | "DRAGON_SOUL" | "TOWER" | "GOLD_LEAD_CHANGE" | "GAME_END";
             /** Gametimeseconds */
             gameTimeSeconds: number | null;
+            /** Estimatedgametimeseconds */
+            estimatedGameTimeSeconds?: number | null;
             /** Occurredat */
             occurredAt: string | null;
             /**
@@ -185,6 +187,8 @@ export interface components {
             gameNumber: number | null;
             /** Gametimeseconds */
             gameTimeSeconds: number | null;
+            /** Estimatedgametimeseconds */
+            estimatedGameTimeSeconds?: number | null;
             /** Sourcetimestamp */
             sourceTimestamp: string | null;
             /**
